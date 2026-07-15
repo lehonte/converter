@@ -1,0 +1,1 @@
+ALTER TABLE exchange_rates ADD CONSTRAINT unique_currency_id_Rate_date UNIQUE(currency_id, rate_date);

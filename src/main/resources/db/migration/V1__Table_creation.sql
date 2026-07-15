@@ -1,0 +1,14 @@
+CREATE TABLE currencies (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    code VARCHAR(3) NOT NULL UNIQUE,
+    nbrb_id INT NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE exchange_rates (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    currency_id BIGINT NOT NULL REFERENCES currencies(id),
+    rate NUMERIC(19, 4) NOT NULL,
+    scale INT NOT NULL,
+    rate_date DATE NOT NULL
+);

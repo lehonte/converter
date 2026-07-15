@@ -5,6 +5,7 @@ import org.example.connectors.NbrbConnector;
 import org.example.dto.ExchangeRateResponseDto;
 import org.example.entities.Currencies;
 import org.example.entities.ExchangeRates;
+import org.example.exceptions.NullExchangeRatesException;
 import org.example.repositiries.CurrenciesRepository;
 import org.example.repositiries.ExchangeRateRepository;
 import org.springframework.stereotype.Service;
@@ -55,7 +56,7 @@ public class ExchangeRateService {
         if (date == null) date = LocalDate.now();
         ExchangeRates exchangeRates = exchangeRateRepository
                 .findByCurrencyAndRateDate(currenciesRepository.findByCode(code).orElse(null), date)
-                .orElseThrow(() -> new RuntimeException("Курс валюты не найден"));
+                .orElseThrow(() -> new NullExchangeRatesException("Курс валюты не найден"));
         return ExchangeRateResponseDto.builder()
                 .code(exchangeRates.getCurrency().getCode())
                 .rate(exchangeRates.getRate())

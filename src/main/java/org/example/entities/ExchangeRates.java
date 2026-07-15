@@ -3,6 +3,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "exchange_rates")
 @Getter
@@ -15,15 +17,15 @@ public class ExchangeRates {
 
   @ManyToOne
   @JoinColumn(name = "currency_id")
-  private Currencies currencyId;
+  private Currencies currency;
 
   @Column(name = "rate", nullable = false)
-  private String rate;
+  private Long rate;
 
   @Column(name = "scale", nullable = false)
   private long scale;
 
   @Column(name = "rate_date", nullable = false)
-  private java.sql.Date rateDate;
+  private LocalDate rateDate;
 
 }

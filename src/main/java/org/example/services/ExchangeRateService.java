@@ -2,7 +2,7 @@ package org.example.services;
 
 import lombok.RequiredArgsConstructor;
 import org.example.connectors.NbrbConnector;
-import org.example.dto.NbrbRateDto;
+import org.example.dto.ExchangeRateResponseDto;
 import org.example.entities.Currencies;
 import org.example.entities.ExchangeRates;
 import org.example.repositiries.CurrenciesRepository;
@@ -10,6 +10,7 @@ import org.example.repositiries.ExchangeRateRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,7 +23,8 @@ public class ExchangeRateService {
         nbrbConnector.getNbrbRates(LocalDate.now())
                 .forEach(nbrbRateDto -> {
                     Currencies currencies = currenciesRepository
-                            .findByNbrbId(nbrbRateDto.nbrbId());
+                            .findByNbrbId(nbrbRateDto.nbrbId())
+                            .orElse(null);
 
                     if (currencies == null) {
                         currencies = new Currencies();
@@ -33,7 +35,8 @@ public class ExchangeRateService {
                     }
 
                     ExchangeRates exchangeRates = exchangeRateRepository
-                            .findByCurrencyAndRateDate(currencies, nbrbRateDto.date());
+                            .findByCurrencyAndRateDate(currencies, nbrbRateDto.date())
+                            .orElse(null);
 
                     if (exchangeRates == null) {
                         exchangeRates = new ExchangeRates();
@@ -45,6 +48,19 @@ public class ExchangeRateService {
                     exchangeRates.setScale(nbrbRateDto.scale());
                     exchangeRateRepository.save(exchangeRates);
                 });
+
+    }
+
+    public ExchangeRateResponseDto getCurrencyPair(String code, LocalDate date) {
+        if (date == null) date = LocalDate.now();
+        ExchangeRates exchangeRates = exchangeRateRepository
+                .findByCurrencyAndRateDate(currenciesRepository.findByCode(code).orElse(null), date)
+                .orElseThrow(() -> new RuntimeException("Курс валюты не найден"));
+        return ExchangeRateResponseDto.builder()
+                .code(exchangeRates.getCurrency().getCode())
+                .rate(exchangeRates.getRate())
+                .date(exchangeRates.getRateDate())
+                .build();
 
     }
 }

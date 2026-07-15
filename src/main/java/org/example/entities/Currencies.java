@@ -25,6 +25,4 @@ public class Currencies {
   @Column(name = "name", nullable = false)
   private String name;
 
-
-
 }

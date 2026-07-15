@@ -23,7 +23,7 @@ public class ExchangeRates {
   @Column(name = "scale", nullable = false)
   private long scale;
 
-  @Column(name = "rateDate", nullable = false)
+  @Column(name = "rate_date", nullable = false)
   private java.sql.Date rateDate;
 
 }

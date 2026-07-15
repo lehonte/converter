@@ -11,7 +11,7 @@ import org.example.repositiries.ExchangeRateRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.Optional;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -63,5 +63,18 @@ public class ExchangeRateService {
                 .date(exchangeRates.getRateDate())
                 .build();
 
+    }
+
+
+    public List<ExchangeRateResponseDto> getAllCurrencies(LocalDate date) {
+        return exchangeRateRepository
+                .findByRateDate(date)
+                .orElseThrow(() -> new NullExchangeRatesException("Курс валюты не найден"))
+                .stream()
+                .map(exchangeRates -> new ExchangeRateResponseDto(
+                        exchangeRates.getCurrency().getCode(),
+                        exchangeRates.getRate(),
+                        exchangeRates.getRateDate()))
+                .toList();
     }
 }

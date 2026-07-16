@@ -3,6 +3,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
@@ -20,7 +21,7 @@ public class ExchangeRates {
   private Currencies currency;
 
   @Column(name = "rate", nullable = false)
-  private Long rate;
+  private BigDecimal rate;
 
   @Column(name = "scale", nullable = false)
   private long scale;

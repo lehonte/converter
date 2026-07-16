@@ -1,5 +1,6 @@
 package org.example.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
 import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
 import org.springframework.context.annotation.Bean;
@@ -11,6 +12,10 @@ import java.time.Duration;
 
 @Configuration
 public class RestClientConfig {
+
+    @Value("${convector.nbrb.url}")
+    private String apiUrl;
+
     @Bean
     public RestClient getNbrbRate() {
         ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.defaults()
@@ -22,7 +27,7 @@ public class RestClientConfig {
 
         return RestClient.builder()
                 .requestFactory(factory)
-                .baseUrl("https://api.nbrb.by/")
+                .baseUrl(apiUrl)
                 .build();
     }
 }

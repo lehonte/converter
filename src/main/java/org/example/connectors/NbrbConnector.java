@@ -24,7 +24,8 @@ public class NbrbConnector {
                         .queryParamIfPresent("ondate", Optional.ofNullable(date))
                         .build())
                 .retrieve()
-                .body(new ParameterizedTypeReference<List<NbrbRateDto>>() {});
+                .body(new ParameterizedTypeReference<>() {
+                });
 
 
     }

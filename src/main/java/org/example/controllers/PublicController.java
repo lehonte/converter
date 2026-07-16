@@ -32,9 +32,16 @@ public class PublicController {
 
 
     @GetMapping("/rates/all")
-    public List<ExchangeRateResponseDto> getAllCurrencies(LocalDate date) {
+    public List<ExchangeRateResponseDto> getAllCurrencies(@RequestParam(required = false) LocalDate date) {
         return exchangeRateService.getAllCurrencies(date);
     }
 
-
+    @GetMapping("/rates/history")
+    public List<ExchangeRateResponseDto> getAllCurrenciesForTime(@NotBlank(message = "Код валюты не должен быть пустым")
+                                                                     @Pattern(regexp = "^[A-Z]{3}$", message = "Неверный тип данных")
+                                                                     @RequestParam String code,
+                                                                 @RequestParam("from") LocalDate fromDate,
+                                                                 @RequestParam("to") LocalDate toDate) {
+        return exchangeRateService.getAllCurrenciesForTime(code, fromDate, toDate);
+    }
 }

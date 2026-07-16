@@ -13,4 +13,5 @@ import java.util.Optional;
 public interface ExchangeRateRepository extends JpaRepository<ExchangeRates, Long> {
     Optional<ExchangeRates> findByCurrencyAndRateDate(Currencies currency, LocalDate rateDate);
     Optional<List<ExchangeRates>> findByRateDate(LocalDate rateDate);
+    Optional<List<ExchangeRates>> findByCurrencyAndRateDateBetween(Currencies currency, LocalDate fromDate, LocalDate toDate);
 }

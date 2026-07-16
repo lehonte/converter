@@ -44,14 +44,28 @@ public class ExchangeRateService {
                 .rate(exchangeRates.getRate())
                 .date(exchangeRates.getRateDate())
                 .build();
-
     }
-
 
     @Transactional(readOnly = true)
     public List<ExchangeRateResponseDto> getAllCurrencies(LocalDate date) {
+        if (date == null) date = LocalDate.now();
         return exchangeRateRepository
                 .findByRateDate(date)
+                .orElseThrow(() -> new NullExchangeRatesException("Курс валюты не найден"))
+                .stream()
+                .map(exchangeRates -> new ExchangeRateResponseDto(
+                        exchangeRates.getCurrency().getCode(),
+                        exchangeRates.getRate(),
+                        exchangeRates.getRateDate()))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ExchangeRateResponseDto> getAllCurrenciesForTime(String code, LocalDate fromDate, LocalDate toDate) {
+        Currencies currency = currenciesRepository.findByCode(code)
+                .orElseThrow(() -> new CurrencyNotFoundException("Валюта кода не найдена"));
+
+        return exchangeRateRepository.findByCurrencyAndRateDateBetween(currency, fromDate, toDate)
                 .orElseThrow(() -> new NullExchangeRatesException("Курс валюты не найден"))
                 .stream()
                 .map(exchangeRates -> new ExchangeRateResponseDto(

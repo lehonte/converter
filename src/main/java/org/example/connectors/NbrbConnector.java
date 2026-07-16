@@ -26,7 +26,5 @@ public class NbrbConnector {
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {
                 });
-
-
     }
 }

@@ -3,8 +3,10 @@ package org.example.services;
 import lombok.RequiredArgsConstructor;
 import org.example.connectors.NbrbConnector;
 import org.example.dto.ExchangeRateResponseDto;
+import org.example.dto.NbrbRateDto;
 import org.example.entities.Currencies;
 import org.example.entities.ExchangeRates;
+import org.example.exceptions.CurrencyNotFoundException;
 import org.example.exceptions.NullExchangeRatesException;
 import org.example.repositiries.CurrenciesRepository;
 import org.example.repositiries.ExchangeRateRepository;
@@ -20,57 +22,50 @@ public class ExchangeRateService {
     private final NbrbConnector nbrbConnector;
     private final ExchangeRateRepository exchangeRateRepository;
     private final CurrenciesRepository currenciesRepository;
+    private final DataLoadingTransaction dataLoadingTransaction;
 
-    @Transactional
     public void dataLoading() {
-        nbrbConnector.getNbrbRates(LocalDate.now())
-                .forEach(nbrbRateDto -> {
-                    Currencies currencies = currenciesRepository
-                            .findByNbrbId(nbrbRateDto.nbrbId())
-                            .orElse(null);
-
-                    if (currencies == null) {
-                        currencies = new Currencies();
-                        currencies.setCode(nbrbRateDto.code());
-                        currencies.setName(nbrbRateDto.name());
-                        currencies.setNbrbId(nbrbRateDto.nbrbId());
-                        currencies = currenciesRepository.save(currencies);
-                    }
-
-                    ExchangeRates exchangeRates = exchangeRateRepository
-                            .findByCurrencyAndRateDate(currencies, nbrbRateDto.date())
-                            .orElse(null);
-
-                    if (exchangeRates == null) {
-                        exchangeRates = new ExchangeRates();
-                        exchangeRates.setCurrency(currencies);
-                    }
-
-                    exchangeRates.setRate(nbrbRateDto.rate());
-                    exchangeRates.setRateDate(nbrbRateDto.date());
-                    exchangeRates.setScale(nbrbRateDto.scale());
-                    exchangeRateRepository.save(exchangeRates);
-                });
-
+        List<NbrbRateDto> rates = nbrbConnector.getNbrbRates(LocalDate.now());
+        dataLoadingTransaction.dataLoadingTransaction(rates);
     }
 
+    @Transactional(readOnly = true)
     public ExchangeRateResponseDto getCurrencyPair(String code, LocalDate date) {
         if (date == null) date = LocalDate.now();
+
+        Currencies currency = currenciesRepository.findByCode(code)
+                .orElseThrow(() -> new CurrencyNotFoundException("Валюта кода не найдена"));
+
         ExchangeRates exchangeRates = exchangeRateRepository
-                .findByCurrencyAndRateDate(currenciesRepository.findByCode(code).orElse(null), date)
+                .findByCurrencyAndRateDate(currency, date)
                 .orElseThrow(() -> new NullExchangeRatesException("Курс валюты не найден"));
         return ExchangeRateResponseDto.builder()
                 .code(exchangeRates.getCurrency().getCode())
                 .rate(exchangeRates.getRate())
                 .date(exchangeRates.getRateDate())
                 .build();
-
     }
 
-
+    @Transactional(readOnly = true)
     public List<ExchangeRateResponseDto> getAllCurrencies(LocalDate date) {
+        if (date == null) date = LocalDate.now();
         return exchangeRateRepository
                 .findByRateDate(date)
+                .orElseThrow(() -> new NullExchangeRatesException("Курс валюты не найден"))
+                .stream()
+                .map(exchangeRates -> new ExchangeRateResponseDto(
+                        exchangeRates.getCurrency().getCode(),
+                        exchangeRates.getRate(),
+                        exchangeRates.getRateDate()))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ExchangeRateResponseDto> getAllCurrenciesForTime(String code, LocalDate fromDate, LocalDate toDate) {
+        Currencies currency = currenciesRepository.findByCode(code)
+                .orElseThrow(() -> new CurrencyNotFoundException("Валюта кода не найдена"));
+
+        return exchangeRateRepository.findByCurrencyAndRateDateBetween(currency, fromDate, toDate)
                 .orElseThrow(() -> new NullExchangeRatesException("Курс валюты не найден"))
                 .stream()
                 .map(exchangeRates -> new ExchangeRateResponseDto(

@@ -9,6 +9,7 @@ import org.example.exceptions.NullExchangeRatesException;
 import org.example.repositiries.CurrenciesRepository;
 import org.example.repositiries.ExchangeRateRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -20,6 +21,7 @@ public class ExchangeRateService {
     private final ExchangeRateRepository exchangeRateRepository;
     private final CurrenciesRepository currenciesRepository;
 
+    @Transactional
     public void dataLoading() {
         nbrbConnector.getNbrbRates(LocalDate.now())
                 .forEach(nbrbRateDto -> {

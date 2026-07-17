@@ -6,5 +6,5 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Builder
-public record ExchangeRateResponseDto(String code, BigDecimal rate, LocalDate date) {
+public record ExchangeRateResponseDto(Long scale, String code, BigDecimal rate, LocalDate date) {
 }

@@ -3,6 +3,7 @@ package org.example.exceptions;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.dialect.lock.OptimisticEntityLockException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -36,6 +37,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     public ProblemDetail handleNotFoundException() {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Эндпоинт не найден на сервере (404)");
+    }
+
+    @ExceptionHandler(OptimisticEntityLockException.class)
+    public ProblemDetail handleOptimisticEntityLockException(OptimisticEntityLockException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)

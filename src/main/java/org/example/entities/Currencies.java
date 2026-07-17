@@ -12,6 +12,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Currencies {
 
+  @Version
+  private Long version;
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private long id;

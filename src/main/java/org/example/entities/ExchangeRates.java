@@ -12,6 +12,9 @@ import java.time.LocalDate;
 @Setter
 public class ExchangeRates {
 
+  @Version
+  private Long version;
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private long id;

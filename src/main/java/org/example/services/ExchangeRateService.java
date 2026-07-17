@@ -1,6 +1,7 @@
 package org.example.services;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.connectors.NbrbConnector;
 import org.example.dto.ExchangeRateResponseDto;
 import org.example.dto.NbrbRateDto;
@@ -18,6 +19,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ExchangeRateService {
@@ -27,7 +29,9 @@ public class ExchangeRateService {
     private final DataLoadingTransaction dataLoadingTransaction;
 
     public void dataLoading() {
+        log.info("Начало загрузки курсов из НБРБ");
         List<NbrbRateDto> rates = nbrbConnector.getNbrbRates(LocalDate.now());
+        log.info("Конец загрузки курсов из НБРБ, было загружено {}", rates.size());
         dataLoadingTransaction.dataLoadingTransaction(rates);
     }
 
@@ -90,7 +94,7 @@ public class ExchangeRateService {
                 .orElseThrow(() -> new CurrencyNotFoundException("Валюта '" + secondCode + "' не найдена"));
 
         ExchangeRates firstRate = exchangeRateRepository.findByCurrencyAndRateDate(firstCurrency, date)
-                .orElseThrow(() -> new NullExchangeRatesException("Курс валюты '" + firstCurrency.getCode() + "' не найдена"));
+                .orElseThrow(() -> new NullExchangeRatesException("Курс валюты '" + firstCurrency.getCode() + "' не найден"));
         ExchangeRates secondRate = exchangeRateRepository.findByCurrencyAndRateDate(secondCurrency, date)
                 .orElseThrow(() -> new NullExchangeRatesException("Курс валюты '" + secondCurrency.getCode()+ "' не найден"));
 

@@ -1,6 +1,7 @@
 package org.example.services;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.dto.NbrbRateDto;
 import org.example.entities.Currencies;
 import org.example.entities.ExchangeRates;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class DataLoadingTransaction {
@@ -20,12 +22,14 @@ public class DataLoadingTransaction {
 
     @Transactional
     public void dataLoadingTransaction(List<NbrbRateDto> rates) {
+        log.info("Начало транзакции новых курсов");
         rates.forEach(nbrbRateDto -> {
             Currencies currencies = currenciesRepository
                     .findByNbrbId(nbrbRateDto.nbrbId())
                     .orElse(null);
 
             if (currencies == null) {
+                log.info("Добавлена новая валюта: {} ({})", nbrbRateDto.code(), nbrbRateDto.name());
                 currencies = new Currencies();
                 currencies.setCode(nbrbRateDto.code());
                 currencies.setName(nbrbRateDto.name());
@@ -47,6 +51,6 @@ public class DataLoadingTransaction {
             exchangeRates.setScale(nbrbRateDto.scale());
             exchangeRateRepository.save(exchangeRates);
         });
-
+        log.info("Конец транзакции новых курсов");
     }
 }

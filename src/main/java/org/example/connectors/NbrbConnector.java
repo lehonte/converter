@@ -1,30 +1,29 @@
 package org.example.connectors;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.dto.NbrbRateDto;
-import org.springframework.core.ParameterizedTypeReference;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class NbrbConnector {
 
-    private final RestClient restClient;
+    private final NbrbConnectorRetryable nbrbConnectorRetryable;
 
+    @CircuitBreaker(name = "nbrbApi", fallbackMethod = "fallbackRates")
     public List<NbrbRateDto> getNbrbRates(LocalDate date) {
-        return restClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/exrates/rates")
-                        .queryParam("periodicity", 0)
-                        .queryParamIfPresent("ondate", Optional.ofNullable(date))
-                        .build())
-                .retrieve()
-                .body(new ParameterizedTypeReference<>() {
-                });
+        return nbrbConnectorRetryable.getNbrbRatesRetryable(date);
+    }
+
+    @SuppressWarnings("unused")
+    private List<NbrbRateDto> fallbackRates(LocalDate date, Exception ex) {
+        log.warn("Проблема соединения с внешним севером");
+        return List.of();
     }
 }

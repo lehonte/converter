@@ -7,15 +7,15 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.example.dto.ExchangeRateResponseDto;
+import org.example.dto.UserDto;
 import org.example.services.ExchangeRateService;
 import jakarta.validation.constraints.Pattern;
+import org.example.services.UserService;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -28,6 +28,17 @@ import java.util.List;
 public class PublicController {
 
     private final ExchangeRateService exchangeRateService;
+    private final UserService userService;
+
+    @Operation(summary = "Вход")
+    @PostMapping("/login")
+    public UserDto login(@NotBlank(message = "Логин не может быть пустым")
+                                @RequestParam String username,
+                         @NotBlank(message = "Пароль не может быть пустым")
+                                @Size(min = 5, message = "Пароль должен содержать минимум 5 символов")
+                                @RequestParam String password) {
+        return userService.login(username, password);
+    }
 
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Курс найден",

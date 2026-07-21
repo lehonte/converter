@@ -46,15 +46,6 @@ public class JwtToken {
                 .getSubject();
     }
 
-    public String getRole(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(secretKey)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .get("role", String.class);
-    }
-
     public boolean isTokenValid(String token, UserDetails userDetails) {
         String username = getUsername(token);
         return username.equals(userDetails.getUsername()) && !isTokenExpired(token);

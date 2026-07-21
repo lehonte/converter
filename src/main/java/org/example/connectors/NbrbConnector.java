@@ -23,7 +23,7 @@ public class NbrbConnector {
 
     @SuppressWarnings("unused")
     private List<NbrbRateDto> fallbackRates(LocalDate date, Exception ex) {
-        log.warn("Проблема соединения с внешним севером");
+        log.warn("Проблема соединения с внешним сервером");
         return List.of();
     }
 }

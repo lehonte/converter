@@ -34,6 +34,9 @@ public class PublicControllerTest {
     @MockitoBean
     private ExchangeRateService exchangeRateService;
 
+    @MockitoBean
+    private UserService userService;
+
     @Test
     void getCurrencyPairValidRequestTest() throws Exception {
         when(exchangeRateService.getCurrencyPair(eq("USD"), any()))
@@ -72,9 +75,9 @@ public class PublicControllerTest {
                 .thenReturn(new ExchangeRateResponseDto(1L, "USD/EUR", BigDecimal.valueOf(0.981818), LocalDate.now()));
 
         mockMvc.perform(get("/api/v1/convert")
-                .param("first", "USD")
-                .param("second", "EUR")
-                .param("date", LocalDate.now().toString()))
+                        .param("first", "USD")
+                        .param("second", "EUR")
+                        .param("date", LocalDate.now().toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value("USD/EUR"));
     }
@@ -82,9 +85,9 @@ public class PublicControllerTest {
     @Test
     void getExchangeRateBetweenTwoCurrenciesInvalidTest() throws Exception {
         mockMvc.perform(get("/api/v1/convert")
-                .param("first", "fgfgsgsg")
-                .param("second", "EUR")
-                .param("date", LocalDate.now().toString()))
+                        .param("first", "fgfgsgsg")
+                        .param("second", "EUR")
+                        .param("date", LocalDate.now().toString()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("Неверный тип данных"));
     }
@@ -92,7 +95,7 @@ public class PublicControllerTest {
     @Test
     void getAllCurrenciesForTimeNoDatesInParametersTest() throws Exception {
         mockMvc.perform(get("/api/v1//rates/history")
-                .param("code", "USD"))
+                        .param("code", "USD"))
                 .andExpect(status().isBadRequest());
     }
 }

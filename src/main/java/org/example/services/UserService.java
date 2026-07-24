@@ -3,7 +3,7 @@ package org.example.services;
 import lombok.RequiredArgsConstructor;
 import org.example.dto.UserDto;
 import org.example.entities.User;
-import org.example.repositiries.UserRepository;
+import org.example.repositories.UserRepository;
 import org.example.security.JpaUserDetailService;
 import org.example.security.JwtToken;
 import org.springframework.security.authentication.AuthenticationManager;

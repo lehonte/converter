@@ -1,0 +1,2 @@
+ALTER TABLE exchange_rates
+ALTER COLUMN scale TYPE BIGINT;

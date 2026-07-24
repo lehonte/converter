@@ -1,4 +1,4 @@
-package org.example.repositiries;
+package org.example.repositories;
 
 import org.example.entities.Currencies;
 import org.example.entities.ExchangeRates;

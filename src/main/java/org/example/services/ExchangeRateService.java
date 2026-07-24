@@ -10,8 +10,8 @@ import org.example.entities.ExchangeRates;
 import org.example.exceptions.CurrencyNotFoundException;
 import org.example.exceptions.NullExchangeRatesException;
 import org.example.exceptions.SecondDataIsEarlierException;
-import org.example.repositiries.CurrenciesRepository;
-import org.example.repositiries.ExchangeRateRepository;
+import org.example.repositories.CurrenciesRepository;
+import org.example.repositories.ExchangeRateRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

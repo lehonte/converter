@@ -50,6 +50,11 @@ public class GlobalExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+    @ExceptionHandler(SecondDataIsEarlierException.class)
+    public ProblemDetail handleSecondDataIsEarlierException(SecondDataIsEarlierException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleException(Exception ex) {
         log.error("Необработанное исключение", ex);

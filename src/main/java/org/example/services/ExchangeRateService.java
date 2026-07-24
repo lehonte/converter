@@ -9,6 +9,7 @@ import org.example.entities.Currencies;
 import org.example.entities.ExchangeRates;
 import org.example.exceptions.CurrencyNotFoundException;
 import org.example.exceptions.NullExchangeRatesException;
+import org.example.exceptions.SecondDataIsEarlierException;
 import org.example.repositiries.CurrenciesRepository;
 import org.example.repositiries.ExchangeRateRepository;
 import org.springframework.stereotype.Service;
@@ -40,7 +41,7 @@ public class ExchangeRateService {
         if (date == null) date = LocalDate.now();
 
         Currencies currency = currenciesRepository.findByCode(code)
-                .orElseThrow(() -> new CurrencyNotFoundException("Валюта кода не найдена"));
+                .orElseThrow(() -> new CurrencyNotFoundException("Валюта '" + code + "' не найдена"));
 
         ExchangeRates exchangeRates = exchangeRateRepository
                 .findByCurrencyAndRateDate(currency, date)
@@ -69,9 +70,14 @@ public class ExchangeRateService {
     }
 
     @Transactional(readOnly = true)
-    public List<ExchangeRateResponseDto> getAllCurrenciesForTime(String code, LocalDate fromDate, LocalDate toDate) {
+    public List<ExchangeRateResponseDto> getAllCurrenciesForTime(String code, LocalDate fromDate, LocalDate toDate)
+            throws SecondDataIsEarlierException, CurrencyNotFoundException, NullExchangeRatesException {
         Currencies currency = currenciesRepository.findByCode(code)
-                .orElseThrow(() -> new CurrencyNotFoundException("Валюта кода не найдена"));
+                .orElseThrow(() -> new CurrencyNotFoundException("Валюта '" + code + "' не найдена"));
+
+        if (toDate.isBefore(fromDate)) {
+            throw new SecondDataIsEarlierException("Неккоретный диапазон дат: вторая граница раньше первой");
+        }
 
         return exchangeRateRepository.findByCurrencyAndRateDateBetween(currency, fromDate, toDate)
                 .orElseThrow(() -> new NullExchangeRatesException("Курс валюты не найден"))

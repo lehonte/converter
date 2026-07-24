@@ -6,6 +6,7 @@ import org.example.entities.Currencies;
 import org.example.entities.ExchangeRates;
 import org.example.exceptions.CurrencyNotFoundException;
 import org.example.exceptions.NullExchangeRatesException;
+import org.example.exceptions.SecondDataIsEarlierException;
 import org.example.repositiries.CurrenciesRepository;
 import org.example.repositiries.ExchangeRateRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,6 +55,7 @@ public class ExchangeRateServiceTest {
     @Test
     void getCurrencyPairCurrencyExistsRateOnDataExsistsTest() {
         Currencies currency = new Currencies();
+        currency.setCode("USD");
         when(currenciesRepository.findByCode("USD"))
                 .thenReturn(Optional.of(currency));
 
@@ -62,7 +64,7 @@ public class ExchangeRateServiceTest {
         exchangeRates.setRate(BigDecimal.valueOf(3.24));
         exchangeRates.setScale(1L);
         exchangeRates.setRateDate(LocalDate.now());
-        when(exchangeRateRepository.findByCurrencyAndRateDate(currency, any(LocalDate.class)))
+        when(exchangeRateRepository.findByCurrencyAndRateDate(eq(currency), any(LocalDate.class)))
                 .thenReturn(Optional.of(exchangeRates));
 
         ExchangeRateResponseDto result = exchangeRateService.getCurrencyPair("USD", LocalDate.now());
@@ -88,10 +90,10 @@ public class ExchangeRateServiceTest {
         when(currenciesRepository.findByCode("USD"))
                 .thenReturn(Optional.of(currency));
 
-        when(exchangeRateRepository.findByCurrencyAndRateDate(currency, any(LocalDate.class)))
+        when(exchangeRateRepository.findByCurrencyAndRateDate(eq(currency), any(LocalDate.class)))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> exchangeRateService.getCurrencyPair("USD", LocalDate.of(1800, 1, 1)))
+        assertThatThrownBy(() -> exchangeRateService.getCurrencyPair("USD", LocalDate.now()))
                 .isInstanceOf(NullExchangeRatesException.class);
     }
 
@@ -102,7 +104,11 @@ public class ExchangeRateServiceTest {
                 .thenReturn(Optional.of(currency));
 
         ExchangeRates exchangeRates = new ExchangeRates();
-        when(exchangeRateRepository.findByCurrencyAndRateDate(currency, any(LocalDate.class)))
+        exchangeRates.setCurrency(currency);
+        exchangeRates.setRate(BigDecimal.valueOf(3.24));
+        exchangeRates.setScale(1L);
+        exchangeRates.setRateDate(LocalDate.now());
+        when(exchangeRateRepository.findByCurrencyAndRateDate(eq(currency), any(LocalDate.class)))
                 .thenReturn(Optional.of(exchangeRates));
 
         exchangeRateService.getCurrencyPair("USD", null);
@@ -117,13 +123,13 @@ public class ExchangeRateServiceTest {
         Currencies currency = new Currencies();
         currency.setCode("USD");
 
-        ExchangeRates mockRate = new ExchangeRates();
-        mockRate.setCurrency(currency);
-        mockRate.setScale(1L);
-        mockRate.setRate(BigDecimal.valueOf(3.24));
-        mockRate.setRateDate(LocalDate.now());
+        ExchangeRates exchangeRates = new ExchangeRates();
+        exchangeRates.setCurrency(currency);
+        exchangeRates.setScale(1L);
+        exchangeRates.setRate(BigDecimal.valueOf(3.24));
+        exchangeRates.setRateDate(LocalDate.now());
 
-        List<ExchangeRates> exchangeRatesList = List.of(mockRate);
+        List<ExchangeRates> exchangeRatesList = List.of(exchangeRates);
 
         when(exchangeRateRepository.findByRateDate(any(LocalDate.class)))
                 .thenReturn(Optional.of(exchangeRatesList));
@@ -142,12 +148,12 @@ public class ExchangeRateServiceTest {
         when(exchangeRateRepository.findByRateDate(any(LocalDate.class)))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> exchangeRateService.getAllCurrencies(LocalDate.of(1800, 1, 1)))
+        assertThatThrownBy(() -> exchangeRateService.getAllCurrencies(LocalDate.now()))
                 .isInstanceOf(NullExchangeRatesException.class);
     }
 
     @Test
-    void getExchangeRateBetweenTwoCurrencies () {
+    void getExchangeRateBetweenTwoCurrenciesTest () {
         Currencies firstCurrency = new Currencies();
         firstCurrency.setCode("USD");
         when(currenciesRepository.findByCode("USD"))
@@ -164,7 +170,7 @@ public class ExchangeRateServiceTest {
         firstExchangeRates.setScale(1L);
         firstExchangeRates.setRateDate(LocalDate.now());
 
-        when(exchangeRateRepository.findByCurrencyAndRateDate(secondCurrency, LocalDate.now()))
+        when(exchangeRateRepository.findByCurrencyAndRateDate(eq(firstCurrency), any(LocalDate.class)))
                 .thenReturn(Optional.of(firstExchangeRates));
 
         ExchangeRates secondExchangeRates = new ExchangeRates();
@@ -173,7 +179,7 @@ public class ExchangeRateServiceTest {
         secondExchangeRates.setScale(1L);
         secondExchangeRates.setRateDate(LocalDate.now());
 
-        when(exchangeRateRepository.findByCurrencyAndRateDate(secondCurrency, LocalDate.now()))
+        when(exchangeRateRepository.findByCurrencyAndRateDate(eq(secondCurrency), any(LocalDate.class)))
                 .thenReturn(Optional.of(secondExchangeRates));
 
         ExchangeRateResponseDto result = exchangeRateService
@@ -190,7 +196,7 @@ public class ExchangeRateServiceTest {
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> exchangeRateService
-                .getExchangeRateBetweenTwoCurrencies("XCV", null, LocalDate.now()))
+                .getExchangeRateBetweenTwoCurrencies("XCV", "EUR", LocalDate.now()))
                 .isInstanceOf(CurrencyNotFoundException.class)
                 .hasMessageContaining("XCV");
     }
@@ -212,7 +218,7 @@ public class ExchangeRateServiceTest {
     }
 
     @Test
-    void getExchangeRateBetweenTwoCurrenciesOnDateNotExistsTest() {
+    void getExchangeRateBetweenTwoCurrenciesOnDateOfFirstNotExistsTest() {
         Currencies firstCurrency = new Currencies();
         firstCurrency.setCode("USD");
         when(currenciesRepository.findByCode("USD"))
@@ -223,15 +229,92 @@ public class ExchangeRateServiceTest {
         when(currenciesRepository.findByCode("EUR"))
                 .thenReturn(Optional.of(secondCurrency));
 
-        when(exchangeRateRepository.findByCurrencyAndRateDate(firstCurrency, any(LocalDate.class)))
-                .thenReturn(Optional.empty());
-        when(exchangeRateRepository.findByCurrencyAndRateDate(secondCurrency, any(LocalDate.class)))
+        when(exchangeRateRepository.findByCurrencyAndRateDate(eq(firstCurrency), any(LocalDate.class)))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> exchangeRateService
-                .getExchangeRateBetweenTwoCurrencies("USD", "EUR", LocalDate.of(1800, 1, 1)))
+                .getExchangeRateBetweenTwoCurrencies("USD", "EUR", LocalDate.now()))
                 .isInstanceOf(NullExchangeRatesException.class);
     }
 
+    @Test
+    void getExchangeRateBetweenTwoCurrenciesSecondRateNotExistsTest() {
+        Currencies firstCurrency = new Currencies();
+        firstCurrency.setCode("USD");
+        when(currenciesRepository.findByCode("USD")).thenReturn(Optional.of(firstCurrency));
 
+        Currencies secondCurrency = new Currencies();
+        secondCurrency.setCode("EUR");
+        when(currenciesRepository.findByCode("EUR")).thenReturn(Optional.of(secondCurrency));
+
+        ExchangeRates firstRate = new ExchangeRates();
+        firstRate.setCurrency(firstCurrency);
+        firstRate.setRate(BigDecimal.valueOf(3.24));
+        firstRate.setScale(1L);
+        when(exchangeRateRepository.findByCurrencyAndRateDate(eq(firstCurrency), any(LocalDate.class)))
+                .thenReturn(Optional.of(firstRate));
+
+        when(exchangeRateRepository.findByCurrencyAndRateDate(eq(secondCurrency), any(LocalDate.class)))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> exchangeRateService
+                .getExchangeRateBetweenTwoCurrencies("USD", "EUR", LocalDate.now()))
+                .isInstanceOf(NullExchangeRatesException.class);
+    }
+
+    @Test
+    void getAllCurrenciesForTimeTest() {
+        Currencies currencies = new Currencies();
+        currencies.setCode("USD");
+        when(currenciesRepository.findByCode("USD"))
+                .thenReturn(Optional.of(currencies));
+
+        ExchangeRates exchangeRates = new ExchangeRates();
+        exchangeRates.setCurrency(currencies);
+        exchangeRates.setRateDate(LocalDate.now());
+        exchangeRates.setRate(BigDecimal.valueOf(3.24));
+        exchangeRates.setScale(1L);
+
+        List<ExchangeRates> exchangeRatesList = List.of(exchangeRates);
+
+        when(exchangeRateRepository.findByCurrencyAndRateDateBetween(eq(currencies),
+                any(LocalDate.class),
+                any(LocalDate.class)))
+                .thenReturn(Optional.of(exchangeRatesList));
+
+        List<ExchangeRateResponseDto> result = exchangeRateService
+                .getAllCurrenciesForTime("USD", LocalDate.now().minusDays(1), LocalDate.now());
+
+        assertThat(result.size()).isEqualTo(1);
+        assertThat(result).isNotEmpty();
+        assertThat(result.get(0).code()).isEqualTo("USD/BYN");
+        assertThat(result.get(0).rate()).isEqualByComparingTo(BigDecimal.valueOf(3.24));
+        assertThat(result.get(0).date()).isEqualTo(LocalDate.now());
+    }
+
+    @Test
+    void getAllCurrenciesForTimeNotDataBetweenDatesTest() {
+        Currencies currencies = new Currencies();
+        currencies.setCode("USD");
+        when(currenciesRepository.findByCode("USD")).thenReturn(Optional.of(currencies));
+
+        when(exchangeRateRepository.findByCurrencyAndRateDateBetween(eq(currencies),
+                any(LocalDate.class),
+                any(LocalDate.class)))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> exchangeRateService.getAllCurrenciesForTime("USD", LocalDate.now(), LocalDate.now()))
+                .isInstanceOf(NullExchangeRatesException.class);
+    }
+
+    @Test
+    void getAllCurrenciesForTimSecondDataIsEarlier() {
+        Currencies currencies = new Currencies();
+        currencies.setCode("USD");
+        when(currenciesRepository.findByCode("USD")).thenReturn(Optional.of(currencies));
+
+        assertThatThrownBy(() -> exchangeRateService.getAllCurrenciesForTime("USD",
+                LocalDate.now(), LocalDate.now().minusDays(1)))
+                .isInstanceOf(SecondDataIsEarlierException.class);
+    }
 }

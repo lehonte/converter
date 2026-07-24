@@ -132,7 +132,7 @@ public class ExchangeRateServiceTest {
         List<ExchangeRates> exchangeRatesList = List.of(exchangeRates);
 
         when(exchangeRateRepository.findByRateDate(any(LocalDate.class)))
-                .thenReturn(Optional.of(exchangeRatesList));
+                .thenReturn(exchangeRatesList);
 
         List<ExchangeRateResponseDto> result = exchangeRateService.getAllCurrencies(LocalDate.now());
 
@@ -146,7 +146,7 @@ public class ExchangeRateServiceTest {
     @Test
     void getAllCurrenciesRatesNotExistsOnDateTest() {
         when(exchangeRateRepository.findByRateDate(any(LocalDate.class)))
-                .thenReturn(Optional.empty());
+                .thenReturn(java.util.Collections.emptyList());
 
         assertThatThrownBy(() -> exchangeRateService.getAllCurrencies(LocalDate.now()))
                 .isInstanceOf(NullExchangeRatesException.class);
@@ -280,7 +280,7 @@ public class ExchangeRateServiceTest {
         when(exchangeRateRepository.findByCurrencyAndRateDateBetween(eq(currencies),
                 any(LocalDate.class),
                 any(LocalDate.class)))
-                .thenReturn(Optional.of(exchangeRatesList));
+                .thenReturn(exchangeRatesList);
 
         List<ExchangeRateResponseDto> result = exchangeRateService
                 .getAllCurrenciesForTime("USD", LocalDate.now().minusDays(1), LocalDate.now());
@@ -301,7 +301,7 @@ public class ExchangeRateServiceTest {
         when(exchangeRateRepository.findByCurrencyAndRateDateBetween(eq(currencies),
                 any(LocalDate.class),
                 any(LocalDate.class)))
-                .thenReturn(Optional.empty());
+                .thenReturn(java.util.Collections.emptyList());
 
         assertThatThrownBy(() -> exchangeRateService.getAllCurrenciesForTime("USD", LocalDate.now(), LocalDate.now()))
                 .isInstanceOf(NullExchangeRatesException.class);

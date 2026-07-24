@@ -30,9 +30,6 @@ public class ExchangeRateRepositoryTest {
     private ExchangeRateRepository exchangeRateRepository;
 
     private Currencies currenciesInFakeDB;
-    private ExchangeRates firstExchangeRatesInFakeDB;
-    private ExchangeRates secondExchangeRatesInFakeDB;
-    private ExchangeRates thirdExchangeRatesInFakeDB;
 
     @BeforeEach
     void setUp() {
@@ -47,21 +44,21 @@ public class ExchangeRateRepositoryTest {
         firstExchangeRates.setRateDate(LocalDate.now());
         firstExchangeRates.setScale(1L);
         firstExchangeRates.setRate(new BigDecimal("3.24"));
-        firstExchangeRatesInFakeDB = entityManager.persist(firstExchangeRates);
+        entityManager.persist(firstExchangeRates);
 
         ExchangeRates secondExchangeRates = new ExchangeRates();
         secondExchangeRates.setCurrency(currencies);
         secondExchangeRates.setRateDate(LocalDate.now().minusDays(1));
         secondExchangeRates.setScale(1L);
         secondExchangeRates.setRate(new BigDecimal("3"));
-        secondExchangeRatesInFakeDB = entityManager.persist(secondExchangeRates);
+        entityManager.persist(secondExchangeRates);
 
         ExchangeRates thirdExchangeRates = new ExchangeRates();
         thirdExchangeRates.setCurrency(currencies);
         thirdExchangeRates.setRateDate(LocalDate.now().minusDays(2));
         thirdExchangeRates.setScale(1L);
         thirdExchangeRates.setRate(new BigDecimal("3.5"));
-        thirdExchangeRatesInFakeDB = entityManager.persist(thirdExchangeRates);
+        entityManager.persist(thirdExchangeRates);
 
         entityManager.flush();
         entityManager.clear();
@@ -81,13 +78,13 @@ public class ExchangeRateRepositoryTest {
     @Test
     void findByCurrencyAndRateDateBetween() {
 
-        Optional<List<ExchangeRates>> foundExchangeRates = exchangeRateRepository
+        List<ExchangeRates> foundExchangeRates = exchangeRateRepository
                 .findByCurrencyAndRateDateBetween(currenciesInFakeDB, LocalDate.now().minusDays(1), LocalDate.now());
 
-        assertThat(foundExchangeRates).isPresent();
-        assertThat(foundExchangeRates.get().size()).isEqualTo(2);
-        assertThat(foundExchangeRates.get().get(0).getCurrency().getCode()).isEqualTo("USD");
-        assertThat(foundExchangeRates.get())
+        assertThat(foundExchangeRates).isNotEmpty();
+        assertThat(foundExchangeRates.size()).isEqualTo(2);
+        assertThat(foundExchangeRates.get(0).getCurrency().getCode()).isEqualTo("USD");
+        assertThat(foundExchangeRates)
                 .extracting(ExchangeRates::getRate)
                 .usingComparatorForType(BigDecimal::compareTo, BigDecimal.class)
                 .containsExactlyInAnyOrder(new BigDecimal("3.24"), new BigDecimal("3"));
@@ -96,13 +93,13 @@ public class ExchangeRateRepositoryTest {
     @Test
     void findByRateDateTest() {
 
-        Optional<List<ExchangeRates>> foundExchangeRates = exchangeRateRepository
+        List<ExchangeRates> foundExchangeRates = exchangeRateRepository
                 .findByRateDate(LocalDate.now().minusDays(1));
 
-        assertThat(foundExchangeRates).isPresent();
-        assertThat(foundExchangeRates.get().size()).isEqualTo(1);
-        assertThat(foundExchangeRates.get().get(0).getRate()).isEqualByComparingTo("3");
-        assertThat(foundExchangeRates.get().get(0).getCurrency().getCode()).isEqualTo("USD");
+        assertThat(foundExchangeRates).isNotEmpty();
+        assertThat(foundExchangeRates.size()).isEqualTo(1);
+        assertThat(foundExchangeRates.get(0).getRate()).isEqualByComparingTo("3");
+        assertThat(foundExchangeRates.get(0).getCurrency().getCode()).isEqualTo("USD");
     }
 
     @Test

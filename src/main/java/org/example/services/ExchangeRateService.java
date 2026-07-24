@@ -57,10 +57,13 @@ public class ExchangeRateService {
     @Transactional(readOnly = true)
     public List<ExchangeRateResponseDto> getAllCurrencies(LocalDate date) {
         if (date == null) date = LocalDate.now();
-        return exchangeRateRepository
-                .findByRateDate(date)
-                .orElseThrow(() -> new NullExchangeRatesException("Курс валюты не найден"))
-                .stream()
+
+        List<ExchangeRates> rates = exchangeRateRepository.findByRateDate(date);
+
+        if (rates.isEmpty()) {
+            throw new NullExchangeRatesException("Курс валюты не найден");
+        }
+        return  rates.stream()
                 .map(exchangeRates -> new ExchangeRateResponseDto(
                         exchangeRates.getScale(),
                         exchangeRates.getCurrency().getCode() + "/BYN",
@@ -79,9 +82,12 @@ public class ExchangeRateService {
             throw new SecondDataIsEarlierException("Неккоретный диапазон дат: вторая граница раньше первой");
         }
 
-        return exchangeRateRepository.findByCurrencyAndRateDateBetween(currency, fromDate, toDate)
-                .orElseThrow(() -> new NullExchangeRatesException("Курс валюты не найден"))
-                .stream()
+        List<ExchangeRates> rates = exchangeRateRepository.findByCurrencyAndRateDateBetween(currency, fromDate, toDate);
+
+        if (rates.isEmpty()) {
+            throw new NullExchangeRatesException("Курс валюты не найден");
+        }
+        return  rates.stream()
                 .map(exchangeRates -> new ExchangeRateResponseDto(
                         exchangeRates.getScale(),
                         exchangeRates.getCurrency().getCode() + "/BYN",

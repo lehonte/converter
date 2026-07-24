@@ -16,8 +16,8 @@ public interface ExchangeRateRepository extends JpaRepository<ExchangeRates, Lon
     Optional<ExchangeRates> findByCurrencyAndRateDate(Currencies currency, LocalDate rateDate);
 
     @EntityGraph(attributePaths = {"currency"})
-    Optional<List<ExchangeRates>> findByRateDate(LocalDate rateDate);
+    List<ExchangeRates> findByRateDate(LocalDate rateDate);
 
     @EntityGraph(attributePaths = {"currency"})
-    Optional<List<ExchangeRates>> findByCurrencyAndRateDateBetween(Currencies currency, LocalDate fromDate, LocalDate toDate);
+    List<ExchangeRates> findByCurrencyAndRateDateBetween(Currencies currency, LocalDate fromDate, LocalDate toDate);
 }

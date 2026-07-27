@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.function.Function;
 
 @Slf4j
 @Service
@@ -38,14 +39,11 @@ public class ExchangeRateService {
 
     @Transactional(readOnly = true)
     public ExchangeRateResponseDto getCurrencyPair(String code, LocalDate date) {
-        if (date == null) date = LocalDate.now();
+        date = getDate(date);
 
-        Currencies currency = currenciesRepository.findByCode(code)
-                .orElseThrow(() -> new CurrencyNotFoundException("Валюта '" + code + "' не найдена"));
+        Currencies currency = getCurrency(code);
+        ExchangeRates exchangeRates = getRate(date, currency);
 
-        ExchangeRates exchangeRates = exchangeRateRepository
-                .findByCurrencyAndRateDate(currency, date)
-                .orElseThrow(() -> new NullExchangeRatesException("Курс валюты не найден"));
         return ExchangeRateResponseDto.builder()
                 .code(exchangeRates.getCurrency().getCode() + "/BYN")
                 .rate(exchangeRates.getRate())
@@ -54,32 +52,31 @@ public class ExchangeRateService {
                 .build();
     }
 
+
+
     @Transactional(readOnly = true)
     public List<ExchangeRateResponseDto> getAllCurrencies(LocalDate date) {
-        if (date == null) date = LocalDate.now();
+        date = getDate(date);
 
         List<ExchangeRates> rates = exchangeRateRepository.findByRateDate(date);
 
         if (rates.isEmpty()) {
             throw new NullExchangeRatesException("Курс валюты не найден");
         }
+
         return  rates.stream()
-                .map(exchangeRates -> new ExchangeRateResponseDto(
-                        exchangeRates.getScale(),
-                        exchangeRates.getCurrency().getCode() + "/BYN",
-                        exchangeRates.getRate(),
-                        exchangeRates.getRateDate()))
+                .map(getExchangeRateResponseDtoFunction())
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<ExchangeRateResponseDto> getAllCurrenciesForTime(String code, LocalDate fromDate, LocalDate toDate)
             throws SecondDataIsEarlierException, CurrencyNotFoundException, NullExchangeRatesException {
-        Currencies currency = currenciesRepository.findByCode(code)
-                .orElseThrow(() -> new CurrencyNotFoundException("Валюта '" + code + "' не найдена"));
+
+        Currencies currency = getCurrency(code);
 
         if (toDate.isBefore(fromDate)) {
-            throw new SecondDataIsEarlierException("Неккоретный диапазон дат: вторая граница раньше первой");
+            throw new SecondDataIsEarlierException("Некорректный диапазон дат: вторая граница раньше первой");
         }
 
         List<ExchangeRates> rates = exchangeRateRepository.findByCurrencyAndRateDateBetween(currency, fromDate, toDate);
@@ -87,32 +84,23 @@ public class ExchangeRateService {
         if (rates.isEmpty()) {
             throw new NullExchangeRatesException("Курс валюты не найден");
         }
+
         return  rates.stream()
-                .map(exchangeRates -> new ExchangeRateResponseDto(
-                        exchangeRates.getScale(),
-                        exchangeRates.getCurrency().getCode() + "/BYN",
-                        exchangeRates.getRate(),
-                        exchangeRates.getRateDate()))
+                .map(getExchangeRateResponseDtoFunction())
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public ExchangeRateResponseDto getExchangeRateBetweenTwoCurrencies(String firstCode, String secondCode, LocalDate date) {
-        if (date == null) date = LocalDate.now();
+        date = getDate(date);
 
-        Currencies firstCurrency = currenciesRepository.findByCode(firstCode)
-                .orElseThrow(() -> new CurrencyNotFoundException("Валюта '" + firstCode + "' не найдена"));
-        Currencies secondCurrency = currenciesRepository.findByCode(secondCode)
-                .orElseThrow(() -> new CurrencyNotFoundException("Валюта '" + secondCode + "' не найдена"));
+        Currencies firstCurrency = getCurrency(firstCode);
+        Currencies secondCurrency = getCurrency(secondCode);
 
-        ExchangeRates firstRate = exchangeRateRepository.findByCurrencyAndRateDate(firstCurrency, date)
-                .orElseThrow(() -> new NullExchangeRatesException("Курс валюты '" + firstCurrency.getCode() + "' не найден"));
-        ExchangeRates secondRate = exchangeRateRepository.findByCurrencyAndRateDate(secondCurrency, date)
-                .orElseThrow(() -> new NullExchangeRatesException("Курс валюты '" + secondCurrency.getCode()+ "' не найден"));
+        ExchangeRates firstRate = getRate(date, firstCurrency);
+        ExchangeRates secondRate = getRate(date, secondCurrency);
 
-        BigDecimal newRate = (firstRate.getRate().multiply(BigDecimal.valueOf(secondRate.getScale())))
-                .divide(secondRate.getRate().multiply(BigDecimal.valueOf(firstRate.getScale())),
-                        6, RoundingMode.HALF_UP);
+        BigDecimal newRate = getNewRate(firstRate, secondRate);
 
         return ExchangeRateResponseDto.builder()
                 .scale(1L)
@@ -121,5 +109,33 @@ public class ExchangeRateService {
                 .date(firstRate.getRateDate())
                 .build();
 
+    }
+
+    private static BigDecimal getNewRate(ExchangeRates firstRate, ExchangeRates secondRate) {
+        return (firstRate.getRate().multiply(BigDecimal.valueOf(secondRate.getScale())))
+                .divide(secondRate.getRate().multiply(BigDecimal.valueOf(firstRate.getScale())),
+                        6, RoundingMode.HALF_UP);
+    }
+
+    private static Function<ExchangeRates, ExchangeRateResponseDto> getExchangeRateResponseDtoFunction() {
+        return exchangeRates -> new ExchangeRateResponseDto(
+                exchangeRates.getScale(),
+                exchangeRates.getCurrency().getCode() + "/BYN",
+                exchangeRates.getRate(),
+                exchangeRates.getRateDate());
+    }
+
+    private ExchangeRates getRate(LocalDate date, Currencies currency) {
+        return exchangeRateRepository.findByCurrencyAndRateDate(currency, date)
+                .orElseThrow(() -> new NullExchangeRatesException("Курс валюты '" + currency.getCode() + "' не найден"));
+    }
+
+    private LocalDate getDate(LocalDate date) {
+        return date == null ? LocalDate.now() : date;
+    }
+
+    private Currencies getCurrency(String code) {
+        return currenciesRepository.findByCode(code)
+                .orElseThrow(() -> new CurrencyNotFoundException("Валюта '" + code + "' не найдена"));
     }
 }

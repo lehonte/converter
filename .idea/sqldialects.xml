@@ -7,5 +7,7 @@
     <file url="file://$PROJECT_DIR$/src/main/resources/db/migration/V4__Create_users.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/src/main/resources/db/migration/V5__Init_default_admin.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/src/main/resources/db/migration/V6__Edited_default_admin.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/src/main/resources/db/migration/V7__Refactor_NbrbId.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/src/main/resources/db/migration/V8__Refactor_scale.sql" dialect="PostgreSQL" />
   </component>
 </project>

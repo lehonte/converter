@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.dto.NbrbRateDto;
 import org.example.entities.Currencies;
 import org.example.entities.ExchangeRates;
-import org.example.repositiries.CurrenciesRepository;
-import org.example.repositiries.ExchangeRateRepository;
+import org.example.repositories.CurrenciesRepository;
+import org.example.repositories.ExchangeRateRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 

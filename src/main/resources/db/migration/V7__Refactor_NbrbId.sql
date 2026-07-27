@@ -1,0 +1,2 @@
+ALTER TABLE currencies
+ALTER COLUMN nbrb_id TYPE BIGINT;

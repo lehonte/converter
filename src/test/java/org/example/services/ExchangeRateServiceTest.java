@@ -1,5 +1,6 @@
 package org.example.services;
 
+import org.apache.camel.ProducerTemplate;
 import org.example.connectors.NbrbConnector;
 import org.example.dto.ExchangeRateResponseDto;
 import org.example.entities.Currencies;
@@ -46,10 +47,13 @@ public class ExchangeRateServiceTest {
     //@InjectMocks или @BeforeEach как ниже. Второе явно
     private ExchangeRateService exchangeRateService;
 
+    @Mock
+    private ProducerTemplate producerTemplate;
+
     @BeforeEach
     void setUp() {
         exchangeRateService = new ExchangeRateService(
-                nbrbConnector, exchangeRateRepository, currenciesRepository, dataLoadingTransaction);
+                nbrbConnector, exchangeRateRepository, currenciesRepository, dataLoadingTransaction, producerTemplate );
     }
 
     @Test

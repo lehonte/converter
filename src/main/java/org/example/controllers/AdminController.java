@@ -33,4 +33,15 @@ public class AdminController {
         exchangeRateService.dataLoading();
     }
 
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Курсы успешно загружены и сохранены"),
+            @ApiResponse(responseCode = "500", description = "Ошибка при загрузке курсов",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    })
+    @Operation(summary = "Загрузка курсов из НБРБ с Camel",
+            description = "Ручной запуск загрузки актуальных курсов валют из API НБРБ с помощью Camel и сохранения их в базу данных")
+    @PostMapping("/retes/camel/upload")
+    public void dataLoadingWithCamel() {
+        exchangeRateService.dataLoadingWithCamel();
+    }
 }

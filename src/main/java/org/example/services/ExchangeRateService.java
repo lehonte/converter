@@ -2,6 +2,7 @@ package org.example.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.camel.ProducerTemplate;
 import org.example.connectors.NbrbConnector;
 import org.example.dto.ExchangeRateResponseDto;
 import org.example.dto.NbrbRateDto;
@@ -29,12 +30,19 @@ public class ExchangeRateService {
     private final ExchangeRateRepository exchangeRateRepository;
     private final CurrenciesRepository currenciesRepository;
     private final DataLoadingTransaction dataLoadingTransaction;
+    private final ProducerTemplate producerTemplate;
 
     public void dataLoading() {
         log.info("Начало загрузки курсов из НБРБ");
         List<NbrbRateDto> rates = nbrbConnector.getNbrbRates(LocalDate.now());
         log.info("Конец загрузки курсов из НБРБ, было загружено {}", rates.size());
         dataLoadingTransaction.dataLoadingTransaction(rates);
+    }
+
+    public void dataLoadingWithCamel() {
+        log.info("Загрузка курсов из НБРБ с помощью Camel");
+        producerTemplate.sendBody("direct:startNbrbRoute", null);
+        log.info("Маршрут Camel успешно отработал");
     }
 
     @Transactional(readOnly = true)

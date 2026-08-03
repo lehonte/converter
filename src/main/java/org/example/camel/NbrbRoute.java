@@ -15,7 +15,8 @@ public class NbrbRoute extends RouteBuilder {
         format.setUseList(true);
         from("direct:startNbrbRoute")
                 .routeId("NBRB")
-                .toD("${properties:convector.nbrb.url}/exrates/rates?periodicity=0&date=${date:now:yyyy-MM-dd}")
+                .setHeader("Date", simple("${date:now:yyyy-MM-dd}"))
+                .toD("${properties:convector.nbrb.url}/exrates/rates?periodicity=0&ondate=${header.Date}")
                 .unmarshal(format)
                 .to("bean:dataLoadingTransaction?method=dataLoadingTransaction")
                 .end();

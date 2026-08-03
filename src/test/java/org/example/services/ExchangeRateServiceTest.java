@@ -1,5 +1,6 @@
 package org.example.services;
 
+import org.apache.camel.ProducerTemplate;
 import org.example.connectors.NbrbConnector;
 import org.example.dto.ExchangeRateResponseDto;
 import org.example.entities.Currencies;
@@ -7,11 +8,13 @@ import org.example.entities.ExchangeRates;
 import org.example.exceptions.CurrencyNotFoundException;
 import org.example.exceptions.NullExchangeRatesException;
 import org.example.exceptions.SecondDataIsEarlierException;
+import org.example.mappers.ExchangeRatesMapper;
 import org.example.repositories.CurrenciesRepository;
 import org.example.repositories.ExchangeRateRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -43,13 +46,18 @@ public class ExchangeRateServiceTest {
     @Mock
     private DataLoadingTransaction dataLoadingTransaction;
 
+    @Mock
+    private ProducerTemplate producerTemplate;
+
+    private final ExchangeRatesMapper exchangeRatesMapper = Mappers.getMapper(ExchangeRatesMapper.class);
+
     //@InjectMocks или @BeforeEach как ниже. Второе явно
     private ExchangeRateService exchangeRateService;
 
     @BeforeEach
     void setUp() {
         exchangeRateService = new ExchangeRateService(
-                nbrbConnector, exchangeRateRepository, currenciesRepository, dataLoadingTransaction);
+                nbrbConnector, exchangeRateRepository, currenciesRepository, dataLoadingTransaction, producerTemplate, exchangeRatesMapper );
     }
 
     @Test
@@ -69,9 +77,10 @@ public class ExchangeRateServiceTest {
 
         ExchangeRateResponseDto result = exchangeRateService.getCurrencyPair("USD", LocalDate.now());
 
+        assertThat(result).isNotNull();
         assertThat(result.code()).isEqualTo("USD/BYN");
         assertThat(result.rate()).isEqualByComparingTo(BigDecimal.valueOf(3.24));
-        assertThat(result.date()).isEqualTo(LocalDate.now());
+        assertThat(result.rateDate()).isEqualTo(LocalDate.now());
     }
 
     @Test
@@ -139,7 +148,7 @@ public class ExchangeRateServiceTest {
         assertThat(result).isNotEmpty().hasSize(1);
         assertThat(result.get(0).code()).isEqualTo("USD/BYN");
         assertThat(result.get(0).rate()).isEqualByComparingTo(BigDecimal.valueOf(3.24));
-        assertThat(result.get(0).date()).isEqualTo(LocalDate.now());
+        assertThat(result.get(0).rateDate()).isEqualTo(LocalDate.now());
     }
 
 
@@ -187,7 +196,7 @@ public class ExchangeRateServiceTest {
 
         assertThat(result.code()).isEqualTo("USD/EUR");
         assertThat(result.rate()).isEqualByComparingTo(BigDecimal.valueOf(0.981818));
-        assertThat(result.date()).isEqualTo(LocalDate.now());
+        assertThat(result.rateDate()).isEqualTo(LocalDate.now());
     }
 
     @Test
@@ -289,7 +298,7 @@ public class ExchangeRateServiceTest {
         assertThat(result).isNotEmpty();
         assertThat(result.get(0).code()).isEqualTo("USD/BYN");
         assertThat(result.get(0).rate()).isEqualByComparingTo(BigDecimal.valueOf(3.24));
-        assertThat(result.get(0).date()).isEqualTo(LocalDate.now());
+        assertThat(result.get(0).rateDate()).isEqualTo(LocalDate.now());
     }
 
     @Test

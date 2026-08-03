@@ -18,7 +18,7 @@ public record NbrbRateDto(
         String name,
 
         @JsonProperty("Date")
-        LocalDate date,
+        LocalDate rateDate,
 
         @JsonProperty("Cur_Scale")
         Long scale,

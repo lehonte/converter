@@ -2,6 +2,7 @@ package org.example.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.camel.ProducerTemplate;
 import org.example.connectors.NbrbConnector;
 import org.example.dto.ExchangeRateResponseDto;
 import org.example.dto.NbrbRateDto;
@@ -10,6 +11,7 @@ import org.example.entities.ExchangeRates;
 import org.example.exceptions.CurrencyNotFoundException;
 import org.example.exceptions.NullExchangeRatesException;
 import org.example.exceptions.SecondDataIsEarlierException;
+import org.example.mappers.ExchangeRatesMapper;
 import org.example.repositories.CurrenciesRepository;
 import org.example.repositories.ExchangeRateRepository;
 import org.springframework.stereotype.Service;
@@ -19,7 +21,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.function.Function;
 
 @Slf4j
 @Service
@@ -29,6 +30,8 @@ public class ExchangeRateService {
     private final ExchangeRateRepository exchangeRateRepository;
     private final CurrenciesRepository currenciesRepository;
     private final DataLoadingTransaction dataLoadingTransaction;
+    private final ProducerTemplate producerTemplate;
+    private final ExchangeRatesMapper exchangeRatesMapper;
 
     public void dataLoading() {
         log.info("Начало загрузки курсов из НБРБ");
@@ -37,36 +40,30 @@ public class ExchangeRateService {
         dataLoadingTransaction.dataLoadingTransaction(rates);
     }
 
-    @Transactional(readOnly = true)
-    public ExchangeRateResponseDto getCurrencyPair(String code, LocalDate date) {
-        date = getDate(date);
-
-        Currencies currency = getCurrency(code);
-        ExchangeRates exchangeRates = getRate(date, currency);
-
-        return ExchangeRateResponseDto.builder()
-                .code(exchangeRates.getCurrency().getCode() + "/BYN")
-                .rate(exchangeRates.getRate())
-                .scale(exchangeRates.getScale())
-                .date(exchangeRates.getRateDate())
-                .build();
+    public void dataLoadingWithCamel() {
+        log.info("Загрузка курсов из НБРБ с помощью Camel");
+        producerTemplate.sendBody("direct:startNbrbRoute", null);
+        log.info("Маршрут Camel успешно отработал");
     }
 
+    @Transactional(readOnly = true)
+    public ExchangeRateResponseDto getCurrencyPair(String code, LocalDate rateDate) {
 
+        rateDate = getDate(rateDate);
+        Currencies currency = getCurrency(code);
+        ExchangeRates exchangeRates = getRate(rateDate, currency);
+
+        return exchangeRatesMapper.toExchangeRateResponseDto(exchangeRates);
+    }
 
     @Transactional(readOnly = true)
-    public List<ExchangeRateResponseDto> getAllCurrencies(LocalDate date) {
-        date = getDate(date);
+    public List<ExchangeRateResponseDto> getAllCurrencies(LocalDate rateDate) {
 
-        List<ExchangeRates> rates = exchangeRateRepository.findByRateDate(date);
+        rateDate = getDate(rateDate);
+        List<ExchangeRates> rates = exchangeRateRepository.findByRateDate(rateDate);
+        if (rates.isEmpty()) throw new NullExchangeRatesException("Курс валюты не найден");
 
-        if (rates.isEmpty()) {
-            throw new NullExchangeRatesException("Курс валюты не найден");
-        }
-
-        return  rates.stream()
-                .map(getExchangeRateResponseDtoFunction())
-                .toList();
+        return  exchangeRatesMapper.toExchangeRateResponseDtoList(rates);
     }
 
     @Transactional(readOnly = true)
@@ -74,55 +71,36 @@ public class ExchangeRateService {
             throws SecondDataIsEarlierException, CurrencyNotFoundException, NullExchangeRatesException {
 
         Currencies currency = getCurrency(code);
-
-        if (toDate.isBefore(fromDate)) {
-            throw new SecondDataIsEarlierException("Некорректный диапазон дат: вторая граница раньше первой");
-        }
+        if (toDate.isBefore(fromDate)) throw new SecondDataIsEarlierException("Некорректный диапазон дат: вторая граница раньше первой");
 
         List<ExchangeRates> rates = exchangeRateRepository.findByCurrencyAndRateDateBetween(currency, fromDate, toDate);
+        if (rates.isEmpty()) throw new NullExchangeRatesException("Курс валюты не найден");
 
-        if (rates.isEmpty()) {
-            throw new NullExchangeRatesException("Курс валюты не найден");
-        }
-
-        return  rates.stream()
-                .map(getExchangeRateResponseDtoFunction())
-                .toList();
+        return  exchangeRatesMapper.toExchangeRateResponseDtoList(rates);
     }
 
     @Transactional(readOnly = true)
-    public ExchangeRateResponseDto getExchangeRateBetweenTwoCurrencies(String firstCode, String secondCode, LocalDate date) {
-        date = getDate(date);
-
+    public ExchangeRateResponseDto getExchangeRateBetweenTwoCurrencies(String firstCode, String secondCode, LocalDate rateDate) {
+        rateDate = getDate(rateDate);
         Currencies firstCurrency = getCurrency(firstCode);
         Currencies secondCurrency = getCurrency(secondCode);
 
-        ExchangeRates firstRate = getRate(date, firstCurrency);
-        ExchangeRates secondRate = getRate(date, secondCurrency);
-
+        ExchangeRates firstRate = getRate(rateDate, firstCurrency);
+        ExchangeRates secondRate = getRate(rateDate, secondCurrency);
         BigDecimal newRate = getNewRate(firstRate, secondRate);
 
         return ExchangeRateResponseDto.builder()
                 .scale(1L)
                 .code(firstRate.getCurrency().getCode() +"/"+ secondRate.getCurrency().getCode())
                 .rate(newRate)
-                .date(firstRate.getRateDate())
+                .rateDate(firstRate.getRateDate())
                 .build();
-
     }
 
     private static BigDecimal getNewRate(ExchangeRates firstRate, ExchangeRates secondRate) {
         return (firstRate.getRate().multiply(BigDecimal.valueOf(secondRate.getScale())))
                 .divide(secondRate.getRate().multiply(BigDecimal.valueOf(firstRate.getScale())),
                         6, RoundingMode.HALF_UP);
-    }
-
-    private static Function<ExchangeRates, ExchangeRateResponseDto> getExchangeRateResponseDtoFunction() {
-        return exchangeRates -> new ExchangeRateResponseDto(
-                exchangeRates.getScale(),
-                exchangeRates.getCurrency().getCode() + "/BYN",
-                exchangeRates.getRate(),
-                exchangeRates.getRateDate());
     }
 
     private ExchangeRates getRate(LocalDate date, Currencies currency) {

@@ -19,5 +19,5 @@ public record ExchangeRateResponseDto(
         BigDecimal rate,
 
         @Schema(description = "Дата актуальности курса", example = "2026-07-17")
-        LocalDate date) {
+        LocalDate rateDate) {
 }

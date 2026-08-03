@@ -47,7 +47,7 @@ public class DataLoadingTransaction {
             }
 
             exchangeRates.setRate(nbrbRateDto.rate());
-            exchangeRates.setRateDate(nbrbRateDto.date());
+            exchangeRates.setDate(nbrbRateDto.date());
             exchangeRates.setScale(nbrbRateDto.scale());
             exchangeRateRepository.save(exchangeRates);
         });

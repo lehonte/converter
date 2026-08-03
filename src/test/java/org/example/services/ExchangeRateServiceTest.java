@@ -8,6 +8,7 @@ import org.example.entities.ExchangeRates;
 import org.example.exceptions.CurrencyNotFoundException;
 import org.example.exceptions.NullExchangeRatesException;
 import org.example.exceptions.SecondDataIsEarlierException;
+import org.example.mappers.ExchangeRatesMapper;
 import org.example.repositories.CurrenciesRepository;
 import org.example.repositories.ExchangeRateRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,10 +51,13 @@ public class ExchangeRateServiceTest {
     @Mock
     private ProducerTemplate producerTemplate;
 
+    @Mock
+    private ExchangeRatesMapper exchangeRatesMapper;
+
     @BeforeEach
     void setUp() {
         exchangeRateService = new ExchangeRateService(
-                nbrbConnector, exchangeRateRepository, currenciesRepository, dataLoadingTransaction, producerTemplate );
+                nbrbConnector, exchangeRateRepository, currenciesRepository, dataLoadingTransaction, producerTemplate, exchangeRatesMapper );
     }
 
     @Test
@@ -67,7 +71,7 @@ public class ExchangeRateServiceTest {
         exchangeRates.setCurrency(currency);
         exchangeRates.setRate(BigDecimal.valueOf(3.24));
         exchangeRates.setScale(1L);
-        exchangeRates.setRateDate(LocalDate.now());
+        exchangeRates.setDate(LocalDate.now());
         when(exchangeRateRepository.findByCurrencyAndRateDate(eq(currency), any(LocalDate.class)))
                 .thenReturn(Optional.of(exchangeRates));
 
@@ -111,7 +115,7 @@ public class ExchangeRateServiceTest {
         exchangeRates.setCurrency(currency);
         exchangeRates.setRate(BigDecimal.valueOf(3.24));
         exchangeRates.setScale(1L);
-        exchangeRates.setRateDate(LocalDate.now());
+        exchangeRates.setDate(LocalDate.now());
         when(exchangeRateRepository.findByCurrencyAndRateDate(eq(currency), any(LocalDate.class)))
                 .thenReturn(Optional.of(exchangeRates));
 
@@ -131,7 +135,7 @@ public class ExchangeRateServiceTest {
         exchangeRates.setCurrency(currency);
         exchangeRates.setScale(1L);
         exchangeRates.setRate(BigDecimal.valueOf(3.24));
-        exchangeRates.setRateDate(LocalDate.now());
+        exchangeRates.setDate(LocalDate.now());
 
         List<ExchangeRates> exchangeRatesList = List.of(exchangeRates);
 
@@ -172,7 +176,7 @@ public class ExchangeRateServiceTest {
         firstExchangeRates.setCurrency(firstCurrency);
         firstExchangeRates.setRate(BigDecimal.valueOf(3.24));
         firstExchangeRates.setScale(1L);
-        firstExchangeRates.setRateDate(LocalDate.now());
+        firstExchangeRates.setDate(LocalDate.now());
 
         when(exchangeRateRepository.findByCurrencyAndRateDate(eq(firstCurrency), any(LocalDate.class)))
                 .thenReturn(Optional.of(firstExchangeRates));
@@ -181,7 +185,7 @@ public class ExchangeRateServiceTest {
         secondExchangeRates.setCurrency(secondCurrency);
         secondExchangeRates.setRate(BigDecimal.valueOf(3.3));
         secondExchangeRates.setScale(1L);
-        secondExchangeRates.setRateDate(LocalDate.now());
+        secondExchangeRates.setDate(LocalDate.now());
 
         when(exchangeRateRepository.findByCurrencyAndRateDate(eq(secondCurrency), any(LocalDate.class)))
                 .thenReturn(Optional.of(secondExchangeRates));
@@ -275,7 +279,7 @@ public class ExchangeRateServiceTest {
 
         ExchangeRates exchangeRates = new ExchangeRates();
         exchangeRates.setCurrency(currencies);
-        exchangeRates.setRateDate(LocalDate.now());
+        exchangeRates.setDate(LocalDate.now());
         exchangeRates.setRate(BigDecimal.valueOf(3.24));
         exchangeRates.setScale(1L);
 

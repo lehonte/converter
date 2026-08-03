@@ -30,6 +30,6 @@ public class ExchangeRates {
   private long scale;
 
   @Column(name = "rate_date", nullable = false)
-  private LocalDate rateDate;
+  private LocalDate date;
 
 }

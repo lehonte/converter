@@ -41,21 +41,21 @@ public class ExchangeRateRepositoryTest {
 
         ExchangeRates firstExchangeRates = new ExchangeRates();
         firstExchangeRates.setCurrency(currencies);
-        firstExchangeRates.setDate(LocalDate.now());
+        firstExchangeRates.setRateDate(LocalDate.now());
         firstExchangeRates.setScale(1L);
         firstExchangeRates.setRate(new BigDecimal("3.24"));
         entityManager.persist(firstExchangeRates);
 
         ExchangeRates secondExchangeRates = new ExchangeRates();
         secondExchangeRates.setCurrency(currencies);
-        secondExchangeRates.setDate(LocalDate.now().minusDays(1));
+        secondExchangeRates.setRateDate(LocalDate.now().minusDays(1));
         secondExchangeRates.setScale(1L);
         secondExchangeRates.setRate(new BigDecimal("3"));
         entityManager.persist(secondExchangeRates);
 
         ExchangeRates thirdExchangeRates = new ExchangeRates();
         thirdExchangeRates.setCurrency(currencies);
-        thirdExchangeRates.setDate(LocalDate.now().minusDays(2));
+        thirdExchangeRates.setRateDate(LocalDate.now().minusDays(2));
         thirdExchangeRates.setScale(1L);
         thirdExchangeRates.setRate(new BigDecimal("3.5"));
         entityManager.persist(thirdExchangeRates);
@@ -107,7 +107,7 @@ public class ExchangeRateRepositoryTest {
 
         ExchangeRates exchangeRates = new ExchangeRates();
         exchangeRates.setCurrency(currenciesInFakeDB);
-        exchangeRates.setDate(LocalDate.now());
+        exchangeRates.setRateDate(LocalDate.now());
         exchangeRates.setScale(1L);
         exchangeRates.setRate(new BigDecimal("3.24"));
 

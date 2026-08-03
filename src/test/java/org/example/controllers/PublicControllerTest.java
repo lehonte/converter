@@ -77,7 +77,7 @@ public class PublicControllerTest {
         mockMvc.perform(get("/api/v1/convert")
                         .param("first", "USD")
                         .param("second", "EUR")
-                        .param("date", LocalDate.now().toString()))
+                        .param("rateDate", LocalDate.now().toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value("USD/EUR"));
     }
@@ -87,7 +87,7 @@ public class PublicControllerTest {
         mockMvc.perform(get("/api/v1/convert")
                         .param("first", "fgfgsgsg")
                         .param("second", "EUR")
-                        .param("date", LocalDate.now().toString()))
+                        .param("rateDate", LocalDate.now().toString()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("Неверный тип данных"));
     }

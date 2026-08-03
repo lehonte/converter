@@ -14,6 +14,7 @@ import org.example.repositories.ExchangeRateRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -45,14 +46,13 @@ public class ExchangeRateServiceTest {
     @Mock
     private DataLoadingTransaction dataLoadingTransaction;
 
-    //@InjectMocks или @BeforeEach как ниже. Второе явно
-    private ExchangeRateService exchangeRateService;
-
     @Mock
     private ProducerTemplate producerTemplate;
 
-    @Mock
-    private ExchangeRatesMapper exchangeRatesMapper;
+    private final ExchangeRatesMapper exchangeRatesMapper = Mappers.getMapper(ExchangeRatesMapper.class);
+
+    //@InjectMocks или @BeforeEach как ниже. Второе явно
+    private ExchangeRateService exchangeRateService;
 
     @BeforeEach
     void setUp() {
@@ -71,15 +71,16 @@ public class ExchangeRateServiceTest {
         exchangeRates.setCurrency(currency);
         exchangeRates.setRate(BigDecimal.valueOf(3.24));
         exchangeRates.setScale(1L);
-        exchangeRates.setDate(LocalDate.now());
+        exchangeRates.setRateDate(LocalDate.now());
         when(exchangeRateRepository.findByCurrencyAndRateDate(eq(currency), any(LocalDate.class)))
                 .thenReturn(Optional.of(exchangeRates));
 
         ExchangeRateResponseDto result = exchangeRateService.getCurrencyPair("USD", LocalDate.now());
 
+        assertThat(result).isNotNull();
         assertThat(result.code()).isEqualTo("USD/BYN");
         assertThat(result.rate()).isEqualByComparingTo(BigDecimal.valueOf(3.24));
-        assertThat(result.date()).isEqualTo(LocalDate.now());
+        assertThat(result.rateDate()).isEqualTo(LocalDate.now());
     }
 
     @Test
@@ -115,7 +116,7 @@ public class ExchangeRateServiceTest {
         exchangeRates.setCurrency(currency);
         exchangeRates.setRate(BigDecimal.valueOf(3.24));
         exchangeRates.setScale(1L);
-        exchangeRates.setDate(LocalDate.now());
+        exchangeRates.setRateDate(LocalDate.now());
         when(exchangeRateRepository.findByCurrencyAndRateDate(eq(currency), any(LocalDate.class)))
                 .thenReturn(Optional.of(exchangeRates));
 
@@ -135,7 +136,7 @@ public class ExchangeRateServiceTest {
         exchangeRates.setCurrency(currency);
         exchangeRates.setScale(1L);
         exchangeRates.setRate(BigDecimal.valueOf(3.24));
-        exchangeRates.setDate(LocalDate.now());
+        exchangeRates.setRateDate(LocalDate.now());
 
         List<ExchangeRates> exchangeRatesList = List.of(exchangeRates);
 
@@ -147,7 +148,7 @@ public class ExchangeRateServiceTest {
         assertThat(result).isNotEmpty().hasSize(1);
         assertThat(result.get(0).code()).isEqualTo("USD/BYN");
         assertThat(result.get(0).rate()).isEqualByComparingTo(BigDecimal.valueOf(3.24));
-        assertThat(result.get(0).date()).isEqualTo(LocalDate.now());
+        assertThat(result.get(0).rateDate()).isEqualTo(LocalDate.now());
     }
 
 
@@ -176,7 +177,7 @@ public class ExchangeRateServiceTest {
         firstExchangeRates.setCurrency(firstCurrency);
         firstExchangeRates.setRate(BigDecimal.valueOf(3.24));
         firstExchangeRates.setScale(1L);
-        firstExchangeRates.setDate(LocalDate.now());
+        firstExchangeRates.setRateDate(LocalDate.now());
 
         when(exchangeRateRepository.findByCurrencyAndRateDate(eq(firstCurrency), any(LocalDate.class)))
                 .thenReturn(Optional.of(firstExchangeRates));
@@ -185,7 +186,7 @@ public class ExchangeRateServiceTest {
         secondExchangeRates.setCurrency(secondCurrency);
         secondExchangeRates.setRate(BigDecimal.valueOf(3.3));
         secondExchangeRates.setScale(1L);
-        secondExchangeRates.setDate(LocalDate.now());
+        secondExchangeRates.setRateDate(LocalDate.now());
 
         when(exchangeRateRepository.findByCurrencyAndRateDate(eq(secondCurrency), any(LocalDate.class)))
                 .thenReturn(Optional.of(secondExchangeRates));
@@ -195,7 +196,7 @@ public class ExchangeRateServiceTest {
 
         assertThat(result.code()).isEqualTo("USD/EUR");
         assertThat(result.rate()).isEqualByComparingTo(BigDecimal.valueOf(0.981818));
-        assertThat(result.date()).isEqualTo(LocalDate.now());
+        assertThat(result.rateDate()).isEqualTo(LocalDate.now());
     }
 
     @Test
@@ -279,7 +280,7 @@ public class ExchangeRateServiceTest {
 
         ExchangeRates exchangeRates = new ExchangeRates();
         exchangeRates.setCurrency(currencies);
-        exchangeRates.setDate(LocalDate.now());
+        exchangeRates.setRateDate(LocalDate.now());
         exchangeRates.setRate(BigDecimal.valueOf(3.24));
         exchangeRates.setScale(1L);
 
@@ -297,7 +298,7 @@ public class ExchangeRateServiceTest {
         assertThat(result).isNotEmpty();
         assertThat(result.get(0).code()).isEqualTo("USD/BYN");
         assertThat(result.get(0).rate()).isEqualByComparingTo(BigDecimal.valueOf(3.24));
-        assertThat(result.get(0).date()).isEqualTo(LocalDate.now());
+        assertThat(result.get(0).rateDate()).isEqualTo(LocalDate.now());
     }
 
     @Test

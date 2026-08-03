@@ -38,7 +38,7 @@ public class DataLoadingTransaction {
             }
 
             ExchangeRates exchangeRates = exchangeRateRepository
-                    .findByCurrencyAndRateDate(currencies, nbrbRateDto.date())
+                    .findByCurrencyAndRateDate(currencies, nbrbRateDto.rateDate())
                     .orElse(null);
 
             if (exchangeRates == null) {
@@ -47,7 +47,7 @@ public class DataLoadingTransaction {
             }
 
             exchangeRates.setRate(nbrbRateDto.rate());
-            exchangeRates.setDate(nbrbRateDto.date());
+            exchangeRates.setRateDate(nbrbRateDto.rateDate());
             exchangeRates.setScale(nbrbRateDto.scale());
             exchangeRateRepository.save(exchangeRates);
         });

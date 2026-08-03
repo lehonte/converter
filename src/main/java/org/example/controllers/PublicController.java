@@ -51,8 +51,8 @@ public class PublicController {
     public ExchangeRateResponseDto getCurrencyPair(@NotBlank(message = "Код валюты не должен быть пустым")
                                                        @Pattern(regexp = "^[A-Z]{3}$", message = "Неверный тип данных")
                                                        @RequestParam String code,
-                                                   @RequestParam(required = false)LocalDate date) {
-        return exchangeRateService.getCurrencyPair(code, date);
+                                                   @RequestParam(required = false)LocalDate rateDate) {
+        return exchangeRateService.getCurrencyPair(code, rateDate);
     }
 
     @ApiResponses({
@@ -63,8 +63,8 @@ public class PublicController {
     })
     @Operation(summary = "Получить курсы")
     @GetMapping("/rates/all")
-    public List<ExchangeRateResponseDto> getAllCurrencies(@RequestParam(required = false) LocalDate date) {
-        return exchangeRateService.getAllCurrencies(date);
+    public List<ExchangeRateResponseDto> getAllCurrencies(@RequestParam(required = false) LocalDate rateDate) {
+        return exchangeRateService.getAllCurrencies(rateDate);
     }
 
     @ApiResponses({
@@ -97,8 +97,8 @@ public class PublicController {
                                                                        @NotBlank(message = "Код валюты не должен быть пустым")
                                                                        @Pattern(regexp = "^[A-Z]{3}$", message = "Неверный тип данных")
                                                                        @RequestParam("second") String secondCode,
-                                                                       @RequestParam(required = false) LocalDate date
+                                                                       @RequestParam(required = false) LocalDate rateDate
                                                                        ) {
-        return exchangeRateService.getExchangeRateBetweenTwoCurrencies(firstCode, secondCode, date);
+        return exchangeRateService.getExchangeRateBetweenTwoCurrencies(firstCode, secondCode, rateDate);
     }
 }

@@ -76,7 +76,7 @@ public class DataLoadingTransactionTest {
         ArgumentCaptor<ExchangeRates> captor = ArgumentCaptor.forClass(ExchangeRates.class);
         verify(exchangeRateRepository).save(captor.capture());
         assertThat(captor.getValue().getCurrency().getCode()).isEqualTo("USD");
-        assertThat(captor.getValue().getDate()).isEqualTo(LocalDate.now());
+        assertThat(captor.getValue().getRateDate()).isEqualTo(LocalDate.now());
         assertThat(captor.getValue().getRate()).isEqualByComparingTo(BigDecimal.ONE);
         assertThat(captor.getValue().getScale()).isEqualTo(1);
     }
@@ -97,7 +97,7 @@ public class DataLoadingTransactionTest {
         exchangeRates.setId(123L);
         exchangeRates.setRate(BigDecimal.ONE);
         exchangeRates.setScale(1L);
-        exchangeRates.setDate(LocalDate.now());
+        exchangeRates.setRateDate(LocalDate.now());
         exchangeRates.setCurrency(currencies);
 
         when(exchangeRateRepository.findByCurrencyAndRateDate(currencies, LocalDate.now()))

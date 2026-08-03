@@ -47,20 +47,20 @@ public class ExchangeRateService {
     }
 
     @Transactional(readOnly = true)
-    public ExchangeRateResponseDto getCurrencyPair(String code, LocalDate date) {
+    public ExchangeRateResponseDto getCurrencyPair(String code, LocalDate rateDate) {
 
-        date = getDate(date);
+        rateDate = getDate(rateDate);
         Currencies currency = getCurrency(code);
-        ExchangeRates exchangeRates = getRate(date, currency);
+        ExchangeRates exchangeRates = getRate(rateDate, currency);
 
         return exchangeRatesMapper.toExchangeRateResponseDto(exchangeRates);
     }
 
     @Transactional(readOnly = true)
-    public List<ExchangeRateResponseDto> getAllCurrencies(LocalDate date) {
+    public List<ExchangeRateResponseDto> getAllCurrencies(LocalDate rateDate) {
 
-        date = getDate(date);
-        List<ExchangeRates> rates = exchangeRateRepository.findByRateDate(date);
+        rateDate = getDate(rateDate);
+        List<ExchangeRates> rates = exchangeRateRepository.findByRateDate(rateDate);
         if (rates.isEmpty()) throw new NullExchangeRatesException("Курс валюты не найден");
 
         return  exchangeRatesMapper.toExchangeRateResponseDtoList(rates);
@@ -80,20 +80,20 @@ public class ExchangeRateService {
     }
 
     @Transactional(readOnly = true)
-    public ExchangeRateResponseDto getExchangeRateBetweenTwoCurrencies(String firstCode, String secondCode, LocalDate date) {
-        date = getDate(date);
+    public ExchangeRateResponseDto getExchangeRateBetweenTwoCurrencies(String firstCode, String secondCode, LocalDate rateDate) {
+        rateDate = getDate(rateDate);
         Currencies firstCurrency = getCurrency(firstCode);
         Currencies secondCurrency = getCurrency(secondCode);
 
-        ExchangeRates firstRate = getRate(date, firstCurrency);
-        ExchangeRates secondRate = getRate(date, secondCurrency);
+        ExchangeRates firstRate = getRate(rateDate, firstCurrency);
+        ExchangeRates secondRate = getRate(rateDate, secondCurrency);
         BigDecimal newRate = getNewRate(firstRate, secondRate);
 
         return ExchangeRateResponseDto.builder()
                 .scale(1L)
                 .code(firstRate.getCurrency().getCode() +"/"+ secondRate.getCurrency().getCode())
                 .rate(newRate)
-                .date(firstRate.getDate())
+                .rateDate(firstRate.getRateDate())
                 .build();
     }
 

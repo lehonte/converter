@@ -22,8 +22,6 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/convertor
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
-      FLYWAY_PLACEHOLDERS_ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH}
-      spring.flyway.placeholders.admin_password_hash: ${ADMIN_PASSWORD_HASH}
     depends_on:
       postgres:
         condition: service_healthy

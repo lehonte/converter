@@ -52,7 +52,7 @@ public class ExchangeRateService {
         exchangeRateCache.deleteCache();
     }
 
-    @Cacheable(value = "exchangeRates", key = "#code + ':' + #rateDate")
+    @Cacheable(value = "exchangeRates", key = "#code + ':' + (#rateDate != null ? #rateDate : T(java.time.LocalDate).now())")
     @Transactional(readOnly = true)
     public ExchangeRateResponseDto getCurrencyPair(String code, LocalDate rateDate) {
 
@@ -63,7 +63,7 @@ public class ExchangeRateService {
         return exchangeRatesMapper.toExchangeRateResponseDto(exchangeRates);
     }
 
-    @Cacheable(value = "exchangeRates", key = "#rateDate")
+    @Cacheable(value = "exchangeRatesAll", key = "(#rateDate != null ? #rateDate : T(java.time.LocalDate).now())")
     @Transactional(readOnly = true)
     public List<ExchangeRateResponseDto> getAllCurrencies(LocalDate rateDate) {
 
@@ -87,7 +87,7 @@ public class ExchangeRateService {
         return  exchangeRatesMapper.toExchangeRateResponseDtoList(rates);
     }
 
-    @Cacheable(value = "exchangeRates", key = "#firstCode+ ':' + #secondCode + ':' + #rateDate")
+    @Cacheable(value = "exchangeRatesConversion", key = "#firstCode+ ':' + #secondCode + ':' + (#rateDate != null ? #rateDate : T(java.time.LocalDate).now())")
     @Transactional(readOnly = true)
     public ExchangeRateResponseDto getExchangeRateBetweenTwoCurrencies(String firstCode, String secondCode, LocalDate rateDate) {
         rateDate = getDate(rateDate);

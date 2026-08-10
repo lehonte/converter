@@ -14,13 +14,16 @@ import org.example.exceptions.SecondDataIsEarlierException;
 import org.example.mappers.ExchangeRatesMapper;
 import org.example.repositories.CurrenciesRepository;
 import org.example.repositories.ExchangeRateRepository;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -32,26 +35,40 @@ public class ExchangeRateService {
     private final DataLoadingTransaction dataLoadingTransaction;
     private final ProducerTemplate producerTemplate;
     private final ExchangeRatesMapper exchangeRatesMapper;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     public void dataLoading() {
         log.info("Начало загрузки курсов из НБРБ");
         List<NbrbRateDto> rates = nbrbConnector.getNbrbRates(LocalDate.now());
         log.info("Конец загрузки курсов из НБРБ, было загружено {}", rates.size());
         dataLoadingTransaction.dataLoadingTransaction(rates);
+        redisTemplate.delete("exchangeRates");
+        Set<String> keys = redisTemplate.keys("*");
+        if (keys != null && !keys.isEmpty()) redisTemplate.delete(keys);
+
     }
 
     public void dataLoadingWithCamel() {
         log.info("Загрузка курсов из НБРБ с помощью Camel");
         producerTemplate.sendBody("direct:startNbrbRoute", null);
         log.info("Маршрут Camel успешно отработал");
+        Set<String> keys = redisTemplate.keys("*");
+        if (keys != null && !keys.isEmpty()) redisTemplate.delete(keys);
+
     }
 
     @Transactional(readOnly = true)
     public ExchangeRateResponseDto getCurrencyPair(String code, LocalDate rateDate) {
 
         rateDate = getDate(rateDate);
+        ExchangeRates cache = (ExchangeRates) redisTemplate.opsForValue().get(code + rateDate);
+
+        if (cache != null)  return exchangeRatesMapper.toExchangeRateResponseDto(cache);
+
         Currencies currency = getCurrency(code);
         ExchangeRates exchangeRates = getRate(rateDate, currency);
+
+        redisTemplate.opsForValue().set(code + rateDate, exchangeRates, Duration.ofDays(1));
 
         return exchangeRatesMapper.toExchangeRateResponseDto(exchangeRates);
     }
@@ -60,10 +77,16 @@ public class ExchangeRateService {
     public List<ExchangeRateResponseDto> getAllCurrencies(LocalDate rateDate) {
 
         rateDate = getDate(rateDate);
+        List<ExchangeRates> cache = (List<ExchangeRates>) redisTemplate.opsForValue().get(String.valueOf(rateDate));
+
+        if (cache != null)  return exchangeRatesMapper.toExchangeRateResponseDtoList(cache);
+
         List<ExchangeRates> rates = exchangeRateRepository.findByRateDate(rateDate);
         if (rates.isEmpty()) throw new NullExchangeRatesException("Курс валюты не найден");
 
-        return  exchangeRatesMapper.toExchangeRateResponseDtoList(rates);
+        redisTemplate.opsForValue().set(String.valueOf(rateDate), rates, Duration.ofDays(1));
+
+        return exchangeRatesMapper.toExchangeRateResponseDtoList(rates);
     }
 
     @Transactional(readOnly = true)
@@ -82,6 +105,10 @@ public class ExchangeRateService {
     @Transactional(readOnly = true)
     public ExchangeRateResponseDto getExchangeRateBetweenTwoCurrencies(String firstCode, String secondCode, LocalDate rateDate) {
         rateDate = getDate(rateDate);
+
+        ExchangeRateResponseDto cache = (ExchangeRateResponseDto) redisTemplate.opsForValue().get(firstCode + secondCode + rateDate);
+        if (cache != null) return cache;
+
         Currencies firstCurrency = getCurrency(firstCode);
         Currencies secondCurrency = getCurrency(secondCode);
 
@@ -89,12 +116,16 @@ public class ExchangeRateService {
         ExchangeRates secondRate = getRate(rateDate, secondCurrency);
         BigDecimal newRate = getNewRate(firstRate, secondRate);
 
-        return ExchangeRateResponseDto.builder()
+        ExchangeRateResponseDto result = ExchangeRateResponseDto.builder()
                 .scale(1L)
                 .code(firstRate.getCurrency().getCode() +"/"+ secondRate.getCurrency().getCode())
                 .rate(newRate)
                 .rateDate(firstRate.getRateDate())
                 .build();
+
+        redisTemplate.opsForValue().set(firstCode + secondCode + rateDate, result, Duration.ofDays(1));
+
+        return result;
     }
 
     private static BigDecimal getNewRate(ExchangeRates firstRate, ExchangeRates secondRate) {

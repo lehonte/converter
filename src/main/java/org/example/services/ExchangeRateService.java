@@ -3,6 +3,7 @@ package org.example.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.ProducerTemplate;
+import org.example.cache.ExchangeRateCache;
 import org.example.connectors.NbrbConnector;
 import org.example.dto.ExchangeRateResponseDto;
 import org.example.dto.NbrbRateDto;
@@ -14,6 +15,7 @@ import org.example.exceptions.SecondDataIsEarlierException;
 import org.example.mappers.ExchangeRatesMapper;
 import org.example.repositories.CurrenciesRepository;
 import org.example.repositories.ExchangeRateRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,20 +34,25 @@ public class ExchangeRateService {
     private final DataLoadingTransaction dataLoadingTransaction;
     private final ProducerTemplate producerTemplate;
     private final ExchangeRatesMapper exchangeRatesMapper;
+    private final ExchangeRateCache exchangeRateCache;
 
     public void dataLoading() {
         log.info("Начало загрузки курсов из НБРБ");
         List<NbrbRateDto> rates = nbrbConnector.getNbrbRates(LocalDate.now());
         log.info("Конец загрузки курсов из НБРБ, было загружено {}", rates.size());
         dataLoadingTransaction.dataLoadingTransaction(rates);
+        exchangeRateCache.deleteCache();
+
     }
 
     public void dataLoadingWithCamel() {
         log.info("Загрузка курсов из НБРБ с помощью Camel");
         producerTemplate.sendBody("direct:startNbrbRoute", null);
         log.info("Маршрут Camel успешно отработал");
+        exchangeRateCache.deleteCache();
     }
 
+    @Cacheable(value = "exchangeRates", key = "#code + ':' + #rateDate")
     @Transactional(readOnly = true)
     public ExchangeRateResponseDto getCurrencyPair(String code, LocalDate rateDate) {
 
@@ -56,6 +63,7 @@ public class ExchangeRateService {
         return exchangeRatesMapper.toExchangeRateResponseDto(exchangeRates);
     }
 
+    @Cacheable(value = "exchangeRates", key = "#rateDate")
     @Transactional(readOnly = true)
     public List<ExchangeRateResponseDto> getAllCurrencies(LocalDate rateDate) {
 
@@ -79,6 +87,7 @@ public class ExchangeRateService {
         return  exchangeRatesMapper.toExchangeRateResponseDtoList(rates);
     }
 
+    @Cacheable(value = "exchangeRates", key = "#firstCode+ ':' + #secondCode + ':' + #rateDate")
     @Transactional(readOnly = true)
     public ExchangeRateResponseDto getExchangeRateBetweenTwoCurrencies(String firstCode, String secondCode, LocalDate rateDate) {
         rateDate = getDate(rateDate);

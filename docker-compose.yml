@@ -1,6 +1,8 @@
 services:
+
   postgres:
     image: postgres:16.4
+    container_name: postgres_service
     environment:
       POSTGRES_DB: convertor
       POSTGRES_USER: postgres
@@ -18,14 +20,27 @@ services:
     build: .
     ports:
       - "8080:8080"
+    container_name: app_service
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/convertor
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
+      REDIS_HOST: redis
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH}
     depends_on:
+      redis:
+        condition: service_started
       postgres:
         condition: service_healthy
 
 
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis_service
+    ports:
+      - "6379:6379"
+
+
 volumes:
   postgres_data:
+  redis_data:

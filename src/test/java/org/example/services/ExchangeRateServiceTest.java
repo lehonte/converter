@@ -17,8 +17,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -53,6 +55,9 @@ public class ExchangeRateServiceTest {
     @Mock
     private RedisTemplate<String, Object> redisTemplate;
 
+    @Mock
+    private ValueOperations<String, Object> valueOperations;
+
     private final ExchangeRatesMapper exchangeRatesMapper = Mappers.getMapper(ExchangeRatesMapper.class);
 
     //@InjectMocks или @BeforeEach как ниже. Второе явно
@@ -60,6 +65,8 @@ public class ExchangeRateServiceTest {
 
     @BeforeEach
     void setUp() {
+        Mockito.lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+
         exchangeRateService = new ExchangeRateService(
                 nbrbConnector, exchangeRateRepository, currenciesRepository, dataLoadingTransaction, producerTemplate, exchangeRatesMapper, redisTemplate );
     }
@@ -79,6 +86,8 @@ public class ExchangeRateServiceTest {
         when(exchangeRateRepository.findByCurrencyAndRateDate(eq(currency), any(LocalDate.class)))
                 .thenReturn(Optional.of(exchangeRates));
 
+        when(valueOperations.get("rate:USD:" + LocalDate.now())).thenReturn(null);
+
         ExchangeRateResponseDto result = exchangeRateService.getCurrencyPair("USD", LocalDate.now());
 
         assertThat(result).isNotNull();
@@ -91,6 +100,8 @@ public class ExchangeRateServiceTest {
     void getCurrencyPairCurrencyNotExistsTest() {
         when(currenciesRepository.findByCode("XYZ"))
                 .thenReturn(Optional.empty());
+
+        when(valueOperations.get("rate:XYZ:" + LocalDate.now())).thenReturn(null);
 
         assertThatThrownBy(() -> exchangeRateService.getCurrencyPair("XYZ", LocalDate.now()))
                 .isInstanceOf(CurrencyNotFoundException.class)
@@ -105,6 +116,8 @@ public class ExchangeRateServiceTest {
 
         when(exchangeRateRepository.findByCurrencyAndRateDate(eq(currency), any(LocalDate.class)))
                 .thenReturn(Optional.empty());
+
+        when(valueOperations.get("rate:USD:" + LocalDate.now())).thenReturn(null);
 
         assertThatThrownBy(() -> exchangeRateService.getCurrencyPair("USD", LocalDate.now()))
                 .isInstanceOf(NullExchangeRatesException.class);
@@ -123,6 +136,8 @@ public class ExchangeRateServiceTest {
         exchangeRates.setRateDate(LocalDate.now());
         when(exchangeRateRepository.findByCurrencyAndRateDate(eq(currency), any(LocalDate.class)))
                 .thenReturn(Optional.of(exchangeRates));
+
+        when(valueOperations.get("rate:USD:" + LocalDate.now())).thenReturn(null);
 
         exchangeRateService.getCurrencyPair("USD", null);
 
@@ -147,6 +162,8 @@ public class ExchangeRateServiceTest {
         when(exchangeRateRepository.findByRateDate(any(LocalDate.class)))
                 .thenReturn(exchangeRatesList);
 
+        when(valueOperations.get("rates-all:" + LocalDate.now())).thenReturn(null);
+
         List<ExchangeRateResponseDto> result = exchangeRateService.getAllCurrencies(LocalDate.now());
 
         assertThat(result).isNotEmpty().hasSize(1);
@@ -160,6 +177,8 @@ public class ExchangeRateServiceTest {
     void getAllCurrenciesRatesNotExistsOnDateTest() {
         when(exchangeRateRepository.findByRateDate(any(LocalDate.class)))
                 .thenReturn(java.util.Collections.emptyList());
+
+        when(valueOperations.get("rates-all:" + LocalDate.now())).thenReturn(null);
 
         assertThatThrownBy(() -> exchangeRateService.getAllCurrencies(LocalDate.now()))
                 .isInstanceOf(NullExchangeRatesException.class);
@@ -195,6 +214,8 @@ public class ExchangeRateServiceTest {
         when(exchangeRateRepository.findByCurrencyAndRateDate(eq(secondCurrency), any(LocalDate.class)))
                 .thenReturn(Optional.of(secondExchangeRates));
 
+        when(valueOperations.get("conversion:USD:EUR:" + LocalDate.now())).thenReturn(null);
+
         ExchangeRateResponseDto result = exchangeRateService
                 .getExchangeRateBetweenTwoCurrencies("USD", "EUR", LocalDate.now());
 
@@ -207,6 +228,8 @@ public class ExchangeRateServiceTest {
     void getExchangeRateBetweenTwoCurrenciesFirstCurrencyNotExsistsTest() {
         when(currenciesRepository.findByCode("XCV"))
                 .thenReturn(Optional.empty());
+
+        when(valueOperations.get("conversion:XCV:EUR:" + LocalDate.now())).thenReturn(null);
 
         assertThatThrownBy(() -> exchangeRateService
                 .getExchangeRateBetweenTwoCurrencies("XCV", "EUR", LocalDate.now()))
@@ -223,6 +246,8 @@ public class ExchangeRateServiceTest {
 
         when(currenciesRepository.findByCode("XCV"))
                 .thenReturn(Optional.empty());
+
+        when(valueOperations.get("conversion:USD:XCV:" + LocalDate.now())).thenReturn(null);
 
         assertThatThrownBy(() -> exchangeRateService
                 .getExchangeRateBetweenTwoCurrencies("USD", "XCV", LocalDate.now()))
@@ -244,6 +269,8 @@ public class ExchangeRateServiceTest {
 
         when(exchangeRateRepository.findByCurrencyAndRateDate(eq(firstCurrency), any(LocalDate.class)))
                 .thenReturn(Optional.empty());
+
+        when(valueOperations.get("conversion:USD:EUR:" + LocalDate.now())).thenReturn(null);
 
         assertThatThrownBy(() -> exchangeRateService
                 .getExchangeRateBetweenTwoCurrencies("USD", "EUR", LocalDate.now()))
@@ -269,6 +296,8 @@ public class ExchangeRateServiceTest {
 
         when(exchangeRateRepository.findByCurrencyAndRateDate(eq(secondCurrency), any(LocalDate.class)))
                 .thenReturn(Optional.empty());
+
+        when(valueOperations.get("conversion:USD:EUR:" + LocalDate.now())).thenReturn(null);
 
         assertThatThrownBy(() -> exchangeRateService
                 .getExchangeRateBetweenTwoCurrencies("USD", "EUR", LocalDate.now()))

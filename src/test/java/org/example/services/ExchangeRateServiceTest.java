@@ -1,7 +1,8 @@
 package org.example.services;
 
 import org.apache.camel.ProducerTemplate;
-import org.example.cache.ExchangeRateCache;
+import org.example.cache.ClearCache;
+import org.example.cache.RateLimiting;
 import org.example.connectors.NbrbConnector;
 import org.example.dto.ExchangeRateResponseDto;
 import org.example.entities.Currencies;
@@ -48,10 +49,13 @@ public class ExchangeRateServiceTest {
     private DataLoadingTransaction dataLoadingTransaction;
 
     @Mock
-    private ExchangeRateCache exchangeRateCache;
+    private ClearCache exchangeRateCache;
 
     @Mock
     private ProducerTemplate producerTemplate;
+
+    @Mock
+    private RateLimiting rateLimiting;
 
     private final ExchangeRatesMapper exchangeRatesMapper = Mappers.getMapper(ExchangeRatesMapper.class);
 
@@ -61,7 +65,14 @@ public class ExchangeRateServiceTest {
     @BeforeEach
     void setUp() {
         exchangeRateService = new ExchangeRateService(
-                nbrbConnector, exchangeRateRepository, currenciesRepository, dataLoadingTransaction, producerTemplate, exchangeRatesMapper, exchangeRateCache );
+                nbrbConnector,
+                exchangeRateRepository,
+                currenciesRepository,
+                dataLoadingTransaction,
+                producerTemplate,
+                exchangeRatesMapper,
+                exchangeRateCache,
+                rateLimiting );
     }
 
     @Test

@@ -3,7 +3,8 @@ package org.example.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.ProducerTemplate;
-import org.example.cache.ExchangeRateCache;
+import org.example.cache.ClearCache;
+import org.example.cache.RateLimiting;
 import org.example.connectors.NbrbConnector;
 import org.example.dto.ExchangeRateResponseDto;
 import org.example.dto.NbrbRateDto;
@@ -34,22 +35,30 @@ public class ExchangeRateService {
     private final DataLoadingTransaction dataLoadingTransaction;
     private final ProducerTemplate producerTemplate;
     private final ExchangeRatesMapper exchangeRatesMapper;
-    private final ExchangeRateCache exchangeRateCache;
+    private final ClearCache exchangeRateCache;
+    private final RateLimiting rateLimiting;
 
     public void dataLoading() {
-        log.info("Начало загрузки курсов из НБРБ");
-        List<NbrbRateDto> rates = nbrbConnector.getNbrbRates(LocalDate.now());
-        log.info("Конец загрузки курсов из НБРБ, было загружено {}", rates.size());
-        dataLoadingTransaction.dataLoadingTransaction(rates);
-        exchangeRateCache.deleteCache();
-
+        if (rateLimiting.rateLimitingToApi()) {
+            log.info("Начало загрузки курсов из НБРБ");
+            List<NbrbRateDto> rates = nbrbConnector.getNbrbRates(LocalDate.now());
+            log.info("Конец загрузки курсов из НБРБ, было загружено {}", rates.size());
+            dataLoadingTransaction.dataLoadingTransaction(rates);
+            exchangeRateCache.deleteCache();
+        } else {
+            log.error("Сервер перегружен - превышен лимит запросов");
+        }
     }
 
     public void dataLoadingWithCamel() {
-        log.info("Загрузка курсов из НБРБ с помощью Camel");
-        producerTemplate.sendBody("direct:startNbrbRoute", null);
-        log.info("Маршрут Camel успешно отработал");
-        exchangeRateCache.deleteCache();
+        if (rateLimiting.rateLimitingToApi()) {
+            log.info("Загрузка курсов из НБРБ с помощью Camel");
+            producerTemplate.sendBody("direct:startNbrbRoute", null);
+            log.info("Маршрут Camel успешно отработал");
+            exchangeRateCache.deleteCache();
+        } else {
+            log.info("Сервер перегружен - превышен лимит запросов");
+        }
     }
 
     @Cacheable(value = "exchangeRates", key = "#code + ':' + (#rateDate != null ? #rateDate : T(java.time.LocalDate).now())")

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class ExchangeRateCache {
+public class ClearCache {
 
     @Caching(evict = {
             @CacheEvict(value = "exchangeRates", allEntries = true),

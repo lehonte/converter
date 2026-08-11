@@ -18,6 +18,7 @@ import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -49,6 +50,9 @@ public class ExchangeRateServiceTest {
     @Mock
     private ProducerTemplate producerTemplate;
 
+    @Mock
+    private RedisTemplate<String, Object> redisTemplate;
+
     private final ExchangeRatesMapper exchangeRatesMapper = Mappers.getMapper(ExchangeRatesMapper.class);
 
     //@InjectMocks или @BeforeEach как ниже. Второе явно
@@ -57,7 +61,7 @@ public class ExchangeRateServiceTest {
     @BeforeEach
     void setUp() {
         exchangeRateService = new ExchangeRateService(
-                nbrbConnector, exchangeRateRepository, currenciesRepository, dataLoadingTransaction, producerTemplate, exchangeRatesMapper );
+                nbrbConnector, exchangeRateRepository, currenciesRepository, dataLoadingTransaction, producerTemplate, exchangeRatesMapper, redisTemplate );
     }
 
     @Test

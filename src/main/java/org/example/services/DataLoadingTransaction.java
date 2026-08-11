@@ -2,6 +2,7 @@ package org.example.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.cache.ClearCache;
 import org.example.dto.NbrbRateDto;
 import org.example.entities.Currencies;
 import org.example.entities.ExchangeRates;
@@ -19,6 +20,7 @@ public class DataLoadingTransaction {
 
     private final ExchangeRateRepository exchangeRateRepository;
     private final CurrenciesRepository currenciesRepository;
+    private final ClearCache clearCache;
 
     @Transactional
     public void dataLoadingTransaction(List<NbrbRateDto> rates) {
@@ -52,5 +54,9 @@ public class DataLoadingTransaction {
             exchangeRateRepository.save(exchangeRates);
         });
         log.info("Конец транзакции новых курсов");
+        clearCache.clearExchangeRatesCache();
+        log.info("Кеш очищен");
     }
+
+
 }

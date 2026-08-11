@@ -1,5 +1,6 @@
 package org.example.services;
 
+import org.example.cache.ClearCache;
 import org.example.dto.NbrbRateDto;
 import org.example.entities.Currencies;
 import org.example.entities.ExchangeRates;
@@ -30,6 +31,9 @@ public class DataLoadingTransactionTest {
 
     @Mock
     private CurrenciesRepository currenciesRepository;
+
+    @Mock
+    private ClearCache clearCache;
 
     @InjectMocks
     private DataLoadingTransaction dataLoadingTransaction;

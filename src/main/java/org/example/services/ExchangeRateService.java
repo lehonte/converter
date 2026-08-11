@@ -23,7 +23,6 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Set;
 
 @Slf4j
 @Service
@@ -42,51 +41,56 @@ public class ExchangeRateService {
         List<NbrbRateDto> rates = nbrbConnector.getNbrbRates(LocalDate.now());
         log.info("Конец загрузки курсов из НБРБ, было загружено {}", rates.size());
         dataLoadingTransaction.dataLoadingTransaction(rates);
-        redisTemplate.delete("exchangeRates");
-        Set<String> keys = redisTemplate.keys("*");
-        if (keys != null && !keys.isEmpty()) redisTemplate.delete(keys);
-
     }
 
     public void dataLoadingWithCamel() {
         log.info("Загрузка курсов из НБРБ с помощью Camel");
         producerTemplate.sendBody("direct:startNbrbRoute", null);
         log.info("Маршрут Camel успешно отработал");
-        Set<String> keys = redisTemplate.keys("*");
-        if (keys != null && !keys.isEmpty()) redisTemplate.delete(keys);
-
     }
 
     @Transactional(readOnly = true)
     public ExchangeRateResponseDto getCurrencyPair(String code, LocalDate rateDate) {
 
         rateDate = getDate(rateDate);
-        ExchangeRates cache = (ExchangeRates) redisTemplate.opsForValue().get(code + rateDate);
+        ExchangeRateResponseDto cache = (ExchangeRateResponseDto)
+                redisTemplate.opsForValue().get("rate:" + code + ":" + rateDate);
 
-        if (cache != null)  return exchangeRatesMapper.toExchangeRateResponseDto(cache);
+        if (cache != null) {
+            log.info("Данные выгружены из кеша");
+            return cache;
+        }
 
         Currencies currency = getCurrency(code);
         ExchangeRates exchangeRates = getRate(rateDate, currency);
 
-        redisTemplate.opsForValue().set(code + rateDate, exchangeRates, Duration.ofDays(1));
+        ExchangeRateResponseDto result = exchangeRatesMapper.toExchangeRateResponseDto(exchangeRates);
 
-        return exchangeRatesMapper.toExchangeRateResponseDto(exchangeRates);
+        redisTemplate.opsForValue().set("rate:" + code + ":" + rateDate, result, Duration.ofDays(1));
+
+        return result;
     }
 
     @Transactional(readOnly = true)
     public List<ExchangeRateResponseDto> getAllCurrencies(LocalDate rateDate) {
 
         rateDate = getDate(rateDate);
-        List<ExchangeRates> cache = (List<ExchangeRates>) redisTemplate.opsForValue().get(String.valueOf(rateDate));
+        List<ExchangeRateResponseDto> cache = (List<ExchangeRateResponseDto>)
+                redisTemplate.opsForValue().get("rates-all:" + rateDate);
 
-        if (cache != null)  return exchangeRatesMapper.toExchangeRateResponseDtoList(cache);
+        if (cache != null) {
+            log.info("Данные выгружены из кеша");
+            return cache;
+        }
 
         List<ExchangeRates> rates = exchangeRateRepository.findByRateDate(rateDate);
         if (rates.isEmpty()) throw new NullExchangeRatesException("Курс валюты не найден");
 
-        redisTemplate.opsForValue().set(String.valueOf(rateDate), rates, Duration.ofDays(1));
+        List<ExchangeRateResponseDto> result = exchangeRatesMapper.toExchangeRateResponseDtoList(rates);
 
-        return exchangeRatesMapper.toExchangeRateResponseDtoList(rates);
+        redisTemplate.opsForValue().set("rates-all:" + rateDate, result, Duration.ofDays(1));
+
+        return result;
     }
 
     @Transactional(readOnly = true)
@@ -106,8 +110,13 @@ public class ExchangeRateService {
     public ExchangeRateResponseDto getExchangeRateBetweenTwoCurrencies(String firstCode, String secondCode, LocalDate rateDate) {
         rateDate = getDate(rateDate);
 
-        ExchangeRateResponseDto cache = (ExchangeRateResponseDto) redisTemplate.opsForValue().get(firstCode + secondCode + rateDate);
-        if (cache != null) return cache;
+        ExchangeRateResponseDto cache = (ExchangeRateResponseDto)
+                redisTemplate.opsForValue().get("conversion:" + firstCode + ":" + secondCode + ":" + rateDate);
+
+        if (cache != null) {
+            log.info("Данные выгружены из кеша");
+            return cache;
+        }
 
         Currencies firstCurrency = getCurrency(firstCode);
         Currencies secondCurrency = getCurrency(secondCode);
@@ -123,7 +132,7 @@ public class ExchangeRateService {
                 .rateDate(firstRate.getRateDate())
                 .build();
 
-        redisTemplate.opsForValue().set(firstCode + secondCode + rateDate, result, Duration.ofDays(1));
+        redisTemplate.opsForValue().set("conversion:" + firstCode + ":" + secondCode + ":" + rateDate, result, Duration.ofDays(1));
 
         return result;
     }

@@ -45,9 +45,7 @@ public class ExchangeRateService {
             log.info("Конец загрузки курсов из НБРБ, было загружено {}", rates.size());
             dataLoadingTransaction.dataLoadingTransaction(rates);
             exchangeRateCache.deleteCache();
-        } else {
-            log.error("Сервер перегружен - превышен лимит запросов");
-        }
+        } else log.error("Сервер перегружен - превышен лимит запросов");
     }
 
     public void dataLoadingWithCamel() {
@@ -56,9 +54,7 @@ public class ExchangeRateService {
             producerTemplate.sendBody("direct:startNbrbRoute", null);
             log.info("Маршрут Camel успешно отработал");
             exchangeRateCache.deleteCache();
-        } else {
-            log.info("Сервер перегружен - превышен лимит запросов");
-        }
+        } else log.error("Сервер перегружен - превышен лимит запросов от Camel");
     }
 
     @Cacheable(value = "exchangeRates", key = "#code + ':' + (#rateDate != null ? #rateDate : T(java.time.LocalDate).now())")
